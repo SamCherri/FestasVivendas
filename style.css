@@ -22,7 +22,6 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,
 .btn{border:1px solid #ffffff2e;background:#ffffff22;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;transition:.15s}
 .btn:hover{background:#ffffff33}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0f12}
-.btn.primary:hover{filter:brightness(.95)}
 .btn.link{border:none;background:transparent;text-decoration:underline;color:#e5e7eb}
 .btn.ghost{background:transparent;border-color:#ffffff44;color:#fff}
 .btn.file input[type=file]{display:none}
@@ -30,6 +29,14 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,
 /* Cards / barras */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
 .toolbar{display:flex;align-items:center;gap:10px}
+
+/* Dashboard */
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.metric-k{font-size:12px;color:var(--muted)}
+.metric-v{font-size:28px;font-weight:800;margin-top:6px}
+.chart-card{margin-bottom:12px}
+.chart-title{margin:0 0 8px 0;font-size:14px;color:var(--muted)}
 
 /* Formulários */
 .form{display:grid;gap:12px}
@@ -79,6 +86,7 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,
 
 /* Responsivo */
 @media (min-width:900px){
+  .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
   .cards{display:none}
   .table-wrapper{display:block}
   .form .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
