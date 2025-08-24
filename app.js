@@ -1,10 +1,11 @@
 (function () {
   'use strict';
-  const $  = (s,el=document)=>el.querySelector(s);
-  const $$ = (s,el=document)=>Array.from(el.querySelectorAll(s));
+  // ---- Helpers
+  const $=(s,el=document)=>el.querySelector(s);
+  const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
   const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,1800);};
   const fmtDate=(d)=>{try{if(typeof d==='string')return d;return d.toISOString().slice(0,10);}catch{return '';}};
-  const parseTime=(str)=>{ if(!str) return null; const [h,m]=str.split(':').map(Number); return h*60+m; };
+  const parseTime=(str)=>{if(!str)return null;const [h,m]=str.split(':').map(Number);return h*60+m;};
   const genId=()=>`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   const load=()=>{try{return JSON.parse(localStorage.getItem(CONFIG.storageKey))||[];}catch{return[];}};
   const save=(rows)=>localStorage.setItem(CONFIG.storageKey,JSON.stringify(rows));
@@ -16,24 +17,26 @@
   const conflict=(rows,c,ignore=null)=> rows.some(r=> r.id!==ignore && r.date===c.date && r.hall.trim().toLowerCase()===c.hall.trim().toLowerCase() && overlaps(r.start_time,r.end_time,c.start_time,c.end_time));
   const mats=(r)=>`copos ${r.cups||0}, garfos ${r.forks||0}, facas ${r.knives||0}, colheres ${r.spoons||0}, pratos ${r.plates||0}`;
 
-  // Elements
+  // ---- Elements
   const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
-  const currentUser=$('#current-user'), hallsData=$('#halls');
-  const tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg');
+  const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg');
   const loginForm=$('#login-form'), filtersForm=$('#filters'), btnClear=$('#btn-clear-filters');
   const btnNew=$('#btn-new'), btnExport=$('#btn-export'), btnCSV=$('#btn-export-csv'), fileImport=$('#file-import'), btnLogout=$('#btn-logout');
   const dialog=$('#party-dialog'), form=$('#party-form'), dialogTitle=$('#dialog-title');
   const viewDialog=$('#view-dialog'), viewContent=$('#view-content'), btnCloseView=$('#btn-close-view');
+  const filterHallSel=filtersForm.querySelector('select[name="hall"]');
+  const formHallSel=form.querySelector('select[name="hall"]');
+  const hallsCanvas=$('#chart-halls');
 
-  // KPIs
+  // KPIs / Chart
   const kToday=$('#kpi-today'), kUpcoming=$('#kpi-upcoming'), kGuests=$('#kpi-guests');
   let hallChart=null;
 
   let state={filterDate:'', filterHall:'', editingId:null};
 
+  // ---- Init
   function init(){
-    hallsData.innerHTML = CONFIG.halls.map(h=>`<option value="${h}">`).join('');
-
+    buildHallSelects();
     // Login
     loginForm.addEventListener('submit',(e)=>{
       e.preventDefault();
@@ -60,6 +63,7 @@
     btnNew.addEventListener('click', openCreate);
     fab.addEventListener('click', openCreate);
 
+    // Export/Import
     btnExport.addEventListener('click', ()=>{
       const rows=load(); const blob=new Blob([JSON.stringify(rows,null,2)],{type:'application/json'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='festas-export.json'; a.click(); URL.revokeObjectURL(a.href);
@@ -87,6 +91,14 @@
     applyAuth(); render();
   }
 
+  function buildHallSelects(){
+    // filtro
+    filterHallSel.innerHTML = '<option value=\"\">Todos</option>' +
+      CONFIG.halls.map(h=>`<option value=\"${h}\">${h}</option>`).join('');
+    // formulário
+    formHallSel.innerHTML = CONFIG.halls.map(h=>`<option value=\"${h}\">${h}</option>`).join('');
+  }
+
   function applyAuth(){
     const u=getUser(); const logged=!!u;
     loginSection.hidden=logged; appSection.hidden=!logged; navActions.hidden=!logged; fab.hidden=!logged;
@@ -108,36 +120,32 @@
     renderMetrics(load());
   }
 
-  // ---------- Dashboard ----------
+  // ---- Dashboard
   function renderMetrics(all){
-    // hoje
     const today=fmtDate(new Date());
-    const todayCount=all.filter(r=>r.date===today).length;
-    kToday.textContent=todayCount;
+    kToday.textContent = all.filter(r=>r.date===today).length;
 
-    // próximas 4 semanas
     const now=new Date(today); const in30=new Date(now); in30.setDate(in30.getDate()+28);
-    const upcoming=all.filter(r=> new Date(r.date)>=now && new Date(r.date)<=in30).length;
-    kUpcoming.textContent=upcoming;
+    kUpcoming.textContent = all.filter(r=> new Date(r.date)>=now && new Date(r.date)<=in30).length;
 
-    // estimativa de convidados: conta linhas da textarea
-    const guests=all.reduce((sum,r)=> sum + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
-    kGuests.textContent=guests;
+    kGuests.textContent = all.reduce((sum,r)=> sum + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
 
-    // gráfico por salão (30 dias)
-    const byHall=CONFIG.halls.reduce((acc,h)=> (acc[h]=0,acc), {});
+    // gráfico por salão
+    const byHall=CONFIG.halls.reduce((acc,h)=>(acc[h]=0,acc),{});
     all.forEach(r=>{ const d=new Date(r.date); if(d>=now && d<=in30){ if(byHall[r.hall]!=null) byHall[r.hall]++; }});
     const labels=Object.keys(byHall); const data=Object.values(byHall);
 
-    const ctx=$('#chart-halls');
-    if(!ctx) return;
     if(hallChart){ hallChart.data.labels=labels; hallChart.data.datasets[0].data=data; hallChart.update(); }
     else {
-      hallChart=new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ label:'Reservas', data }] }, options:{ responsive:true, plugins:{legend:{display:false}} }});
+      hallChart=new Chart(hallsCanvas,{
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Reservas', data }] },
+        options:{ responsive:true, plugins:{legend:{display:false}} }
+      });
     }
   }
 
-  // ---------- Cards (mobile) ----------
+  // ---- Cards (mobile)
   function cardHTML(r){
     const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`]
       .map(x=>`<span class="chip">${x}</span>`).join('');
@@ -153,8 +161,9 @@
         <div class="row-actions">
           <button class="btn" data-act="edit">Editar</button>
           <button class="btn" data-act="view">Ver</button>
+          <button class="btn" data-act="dup">Duplicar</button>
           <button class="btn" data-act="ics">ICS</button>
-          <button class="btn danger" data-act="delete">Excluir</button>
+          <button class="btn danger" data-act="del">Excluir</button>
         </div>
       </article>`;
   }
@@ -164,12 +173,13 @@
       const id=card.dataset.id;
       card.querySelector('[data-act="edit"]').addEventListener('click', ()=>openEdit(id));
       card.querySelector('[data-act="view"]').addEventListener('click', ()=>showView(id));
+      card.querySelector('[data-act="dup"]').addEventListener('click',  ()=>duplicate(id));
       card.querySelector('[data-act="ics"]').addEventListener('click',  ()=>downloadICS(id));
-      card.querySelector('[data-act="delete"]').addEventListener('click', ()=>del(id));
+      card.querySelector('[data-act="del"]').addEventListener('click',  ()=>del(id));
     });
   }
 
-  // ---------- Tabela (desktop) ----------
+  // ---- Tabela (desktop)
   function rowHTML(r){
     return `
       <tr>
@@ -180,8 +190,9 @@
           <div class="row-actions">
             <button class="btn" data-act="edit" data-id="${r.id}">Editar</button>
             <button class="btn" data-act="view" data-id="${r.id}">Ver</button>
+            <button class="btn" data-act="dup"  data-id="${r.id}">Duplicar</button>
             <button class="btn" data-act="ics"  data-id="${r.id}">ICS</button>
-            <button class="btn danger" data-act="delete" data-id="${r.id}">Excluir</button>
+            <button class="btn danger" data-act="del" data-id="${r.id}">Excluir</button>
           </div>
         </td>
       </tr>`;
@@ -190,17 +201,18 @@
     tbody.innerHTML = rows.map(rowHTML).join('');
     $$('[data-act="edit"]',tbody).forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
     $$('[data-act="view"]',tbody).forEach(b=>b.addEventListener('click',()=>showView(b.dataset.id)));
+    $$('[data-act="dup"]', tbody).forEach(b=>b.addEventListener('click',()=>duplicate(b.dataset.id)));
     $$('[data-act="ics"]', tbody).forEach(b=>b.addEventListener('click',()=>downloadICS(b.dataset.id)));
-    $$('[data-act="delete"]',tbody).forEach(b=>b.addEventListener('click',()=>del(b.dataset.id)));
+    $$('[data-act="del"]',tbody).forEach(b=>b.addEventListener('click',()=>del(b.dataset.id)));
   }
 
-  // ---------- CRUD ----------
-  function openCreate(){ $('#party-form [name="date"]').value=fmtDate(new Date()); dialogTitle.textContent='Nova Festa'; dialog.showModal(); }
+  // ---- CRUD
+  function openCreate(){ form.reset(); $('#party-form [name="date"]').value=fmtDate(new Date()); dialogTitle.textContent='Nova Festa'; dialog.showModal(); }
   function fill(p){
     $('#party-form [name="date"]').value=p.date||'';
     $('#party-form [name="start_time"]').value=p.start_time||'';
     $('#party-form [name="end_time"]').value=p.end_time||'';
-    $('#party-form [name="hall"]').value=p.hall||'';
+    formHallSel.value=p.hall||CONFIG.halls[0];
     $('#party-form [name="cups"]').value=p.cups??0;
     $('#party-form [name="forks"]').value=p.forks??0;
     $('#party-form [name="knives"]').value=p.knives??0;
@@ -233,6 +245,11 @@
     save(load().filter(x=>x.id!==id)); render(); toast('Festa removida.');
   }
 
+  function duplicate(id){
+    const rows=load(); const p=rows.find(x=>x.id===id); if(!p) return;
+    const copy={...p,id:genId()}; rows.push(copy); save(rows); render(); toast('Festa duplicada.');
+  }
+
   function readForm(){
     const fd=new FormData(form);
     const o={
@@ -250,7 +267,10 @@
       resident_name: (fd.get('resident_name')||'').toString(),
       guests_text: (fd.get('guests_text')||'').toString()
     };
+    // validações
     if(!o.date || !o.start_time || !o.hall || !o.apartment || !o.resident_name){ toast('Preencha os campos obrigatórios.'); return null; }
+    if(!CONFIG.halls.includes(o.hall)){ toast('Salão inválido. Use: Gourmet ou Menor.'); return null; }
+    if(o.end_time && parseTime(o.end_time)<=parseTime(o.start_time)){ toast('Término deve ser depois do início.'); return null; }
     return o;
   }
 
@@ -264,7 +284,7 @@
     save(rows); dialog.close(); render(); toast('Festa salva.');
   }
 
-  // ---------- ICS ----------
+  // ---- ICS
   function downloadICS(id){
     const p=load().find(x=>x.id===id); if(!p) return;
     const dt = (d,t)=>`${d.replace(/-/g,'')}` + (t?`T${t.replace(':','')}00`:'');
