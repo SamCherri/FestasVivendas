@@ -1,31 +1,30 @@
-/* Paleta e configuração básica */
 :root{
-  --bg:#f6f7f8; --fg:#111827; --muted:#6b7280; --card:#fff; --border:#e5e7eb;
-  --primary:#0b5; --danger:#b22; --radius:14px; --shadow:0 10px 25px rgba(0,0,0,.08);
+  --bg:#0b0b0b; --fg:#e5e7eb; --muted:#9aa4b2; --card:#111418; --border:#232a32;
+  --brand1:#2563eb; --brand2:#16a34a; --accent:#22c55e; --danger:#ef4444;
+  --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.35);
 }
-@media (prefers-color-scheme:dark){
-  :root{ --bg:#0b0b0b; --fg:#e5e7eb; --card:#121418; --border:#232a32; --shadow:0 8px 20px rgba(0,0,0,.35); }
+@media (prefers-color-scheme:light){
+  :root{ --bg:#f6f7f8; --fg:#111827; --muted:#6b7280; --card:#fff; --border:#e5e7eb; --shadow:0 10px 25px rgba(0,0,0,.08); }
 }
 *{box-sizing:border-box} html,body{height:100%}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
 .container{max-width:1100px;margin:24px auto;padding:0 16px}
 
-/* Topbar com gradiente */
-.topbar{position:sticky;top:0;z-index:10;background:linear-gradient(90deg,#0ea5e9,#22c55e);
-  color:#fff; display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:10;background:linear-gradient(90deg,var(--brand1),var(--brand2));
+  color:#fff;display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800}
 .logo{opacity:.9}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .user{opacity:.9;font-size:14px}
 
 /* Botões */
-.btn{border:1px solid #ffffff33;background:#ffffff22;color:#fff;padding:9px 12px;border-radius:12px;backdrop-filter:saturate(140%);
-  cursor:pointer;transition:.15s; }
+.btn{border:1px solid #ffffff2e;background:#ffffff22;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;transition:.15s}
 .btn:hover{background:#ffffff33}
-.btn.primary{background:#16a34a;border-color:#16a34a;color:#fff}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0f12}
 .btn.primary:hover{filter:brightness(.95)}
-.btn.link{border:none;background:transparent;text-decoration:underline}
-.btn.outline{background:transparent;border-color:#ffffff55;color:#fff}
+.btn.link{border:none;background:transparent;text-decoration:underline;color:#e5e7eb}
+.btn.ghost{background:transparent;border-color:#ffffff44;color:#fff}
 .btn.file input[type=file]{display:none}
 
 /* Cards / barras */
@@ -40,33 +39,35 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-ser
 .form .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .form .grid.five{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 .max-480{max-width:480px;margin:0 auto}
-.center-v{margin-top:10vh}
-.note{color:var(--muted);font-size:14px}
+.center-v{margin-top:8vh}
+.note{color:var(--muted);font-size:13px}
 
 /* Lista em cards (mobile-first) */
 .cards{display:grid;grid-template-columns:1fr;gap:12px;margin:12px 0}
-.party-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
-.party-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
-.badge{display:inline-block;background:#10b98122;color:#059669;border:1px solid #10b98155;padding:4px 8px;border-radius:999px;font-size:12px}
-.kv{display:grid;grid-template-columns:100px 1fr;gap:6px;font-size:14px}
-.mats{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.chip{background:#e5e7eb;color:#111827;border-radius:999px;padding:3px 8px;font-size:12px;border:1px solid #d1d5db}
-@media (prefers-color-scheme:dark){ .chip{background:#192028;color:#e5e7eb;border-color:#2a3340} }
-.row-actions{display:flex;gap:8px;margin-top:10px}
+.party-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.party-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.badge{display:inline-block;background:#10b98122;color:#22c55e;border:1px solid #10b98155;padding:5px 10px;border-radius:999px;font-size:12px}
+.kv{display:grid;grid-template-columns:92px 1fr;gap:6px;font-size:14px}
+.mats{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:#1f2937;color:#e5e7eb;border-radius:999px;padding:4px 10px;font-size:12px;border:1px solid #2a3340}
+@media (prefers-color-scheme:light){ .chip{background:#e5e7eb;color:#111827;border-color:#d1d5db} }
+.row-actions{display:flex;gap:8px;margin-top:12px}
 
 /* Tabela (desktop) */
-.table-wrapper{display:none} /* escondida no mobile */
+.table-wrapper{display:none}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{padding:12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 
-/* Dialog */
-#party-dialog{border:none;border-radius:16px;padding:0;width:min(760px,96vw)}
-#party-dialog::backdrop{background:rgba(0,0,0,.25)}
+/* Dialogs */
+#party-dialog,#view-dialog{border:none;border-radius:18px;padding:0;width:min(760px,96vw)}
+#party-dialog::backdrop,#view-dialog::backdrop{background:rgba(0,0,0,.28)}
 .dialog-header{padding:16px;border-bottom:1px solid var(--border)}
+.view-content{display:grid;gap:8px;padding:16px}
+.view-line{display:grid;grid-template-columns:110px 1fr;gap:8px}
 
 /* FAB */
 .fab{position:fixed;right:16px;bottom:18px;width:56px;height:56px;border-radius:50%;
-  background:#16a34a;color:#fff;border:none;box-shadow:var(--shadow);font-size:28px;line-height:0;cursor:pointer}
+  background:var(--accent);color:#0b0f12;border:none;box-shadow:var(--shadow);font-size:28px;line-height:0;cursor:pointer}
 .fab:active{transform:translateY(1px)}
 
 /* Toast */
@@ -78,7 +79,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-ser
 
 /* Responsivo */
 @media (min-width:900px){
-  .cards{display:none}           /* em telas grandes, usa tabela */
+  .cards{display:none}
   .table-wrapper{display:block}
   .form .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
   .form .grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
