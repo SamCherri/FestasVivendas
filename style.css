@@ -1,0 +1,39 @@
+:root { --gap: 12px; --primary: #0b5; --danger: #b22; --muted: #6b7280; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; background:#f6f7f8; color:#111; }
+.container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+.topbar { background:#fff; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; position: sticky; top:0; z-index: 1; }
+.topbar .brand { font-weight: 600; }
+.topbar nav { display:flex; gap: 8px; align-items:center; }
+.topbar .primary { background: var(--primary); color:#fff; border:none; border-radius:10px; padding:8px 10px; cursor:pointer; }
+.topbar .link { background: none; border:none; color:#0369a1; cursor:pointer; }
+.topbar .user { color:#374151; font-size: 14px; margin: 0 8px; }
+.topbar .import input[type=file] { display:none; }
+
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
+.filters { display:flex; gap: var(--gap); align-items:end; margin-bottom: var(--gap); }
+.filters input, .filters select, .filters button { padding:8px; border:1px solid #d1d5db; border-radius:8px; }
+.filters .link { margin-left: 8px; }
+
+.table-wrapper { overflow:auto; }
+.table { width:100%; border-collapse: collapse; }
+.table th, .table td { padding:10px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align: top; }
+.table .row-actions { display:flex; gap:8px; }
+button.danger { background: var(--danger); color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; }
+button.primary { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 12px; cursor:pointer; }
+
+.muted { color: var(--muted); }
+
+.form .grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: var(--gap); }
+.form .grid-5 { grid-template-columns: repeat(5, minmax(0,1fr)); }
+.form input, .form textarea, .form select { padding:10px; border:1px solid #d1d5db; border-radius:8px; width:100%; }
+.form fieldset { border:1px dashed #d1d5db; border-radius:8px; padding:8px; }
+.form .actions { display:flex; justify-content: flex-end; gap: var(--gap); margin-top: 8px; }
+
+#party-dialog { border:none; border-radius:12px; padding:0; width:min(720px, 95vw); }
+#party-dialog::backdrop { background: rgba(0,0,0,0.25); }
+#party-form { padding: 16px; }
+
+.footer { text-align:center; color:#6b7280; padding: 16px; }
+.note { color:#6b7280; font-size: 14px; }
