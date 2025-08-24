@@ -25,6 +25,7 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,
 .btn.link{border:none;background:transparent;text-decoration:underline;color:#e5e7eb}
 .btn.ghost{background:transparent;border-color:#ffffff44;color:#fff}
 .btn.file input[type=file]{display:none}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
 
 /* Cards / barras */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
@@ -83,6 +84,16 @@ body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,
 
 /* Aux */
 .muted{color:var(--muted)} .center{text-align:center}
+
+/* CONTRASTE EM MODO CLARO (botões não somem em fundo branco) */
+@media (prefers-color-scheme:light){
+  .btn{background:#f3f4f6;color:#0b0f12;border:1px solid #e5e7eb}
+  .btn:hover{background:#eceff3}
+  .btn.ghost{background:transparent;color:#0b0f12;border-color:#cbd5e1}
+  .btn.link{background:transparent;border:none;color:#2563eb}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0f12}
+  .dialog-actions .btn{color:#0b0f12}
+}
 
 /* Responsivo */
 @media (min-width:900px){
