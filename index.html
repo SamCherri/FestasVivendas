@@ -10,50 +10,55 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Vivendas de La Salles — Festas</div>
-    <nav id="nav-actions" hidden>
-      <button id="btn-new" class="primary">Nova Festa</button>
-      <label class="import">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">🎉</span>
+      <span>Vivendas de La Salles — Festas</span>
+    </div>
+    <nav id="nav-actions" hidden class="actions">
+      <button id="btn-new" class="btn primary">Nova Festa</button>
+      <label class="btn outline file">
         Importar JSON
         <input type="file" id="file-import" accept="application/json">
       </label>
-      <button id="btn-export">Exportar JSON</button>
+      <button id="btn-export" class="btn">Exportar JSON</button>
+      <button id="btn-export-csv" class="btn">Exportar CSV</button>
       <span id="current-user" class="user"></span>
-      <button id="btn-logout" class="link">Sair</button>
+      <button id="btn-logout" class="btn link">Sair</button>
     </nav>
   </header>
 
   <main class="container">
-
-    <section id="login-section">
-      <h1>Login</h1>
-      <form id="login-form" class="card">
+    <section id="login-section" class="card max-480">
+      <h1>Acesso interno</h1>
+      <p class="muted">Somente zelador, síndico e encarregado.</p>
+      <form id="login-form" class="form">
         <label>Usuário
           <input name="username" required autocomplete="username">
         </label>
         <label>Senha
           <input type="password" name="password" required autocomplete="current-password">
         </label>
-        <button class="primary" type="submit">Entrar</button>
-        <p class="note">Atenção: login apenas de conveniência (sem segurança forte). Use somente em ambiente interno.</p>
+        <button class="btn primary" type="submit">Entrar</button>
+        <p class="note">Aviso: login de conveniência (sem segurança forte). Use apenas internamente.</p>
       </form>
     </section>
 
     <section id="app-section" hidden>
-      <h1>Festas</h1>
-      <form id="filters" class="filters card">
-        <label>Data
-          <input type="date" name="date">
-        </label>
-        <label>Salão
-          <input list="halls" name="hall" placeholder="ex.: Salão de Festas 1">
-          <datalist id="halls"></datalist>
-        </label>
-        <button type="submit">Filtrar</button>
-        <button type="button" id="btn-clear-filters" class="link">Limpar</button>
-      </form>
+      <div class="toolbar card">
+        <form id="filters" class="filters">
+          <label>Data
+            <input type="date" name="date">
+          </label>
+          <label>Salão
+            <input list="halls" name="hall" placeholder="ex.: Salão de Festas 1">
+            <datalist id="halls"></datalist>
+          </label>
+          <button type="submit" class="btn">Filtrar</button>
+          <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
+        </form>
+      </div>
 
-      <div class="table-wrapper card">
+      <div class="card table-wrapper">
         <table class="table" id="parties-table" aria-label="Festas cadastradas">
           <thead>
             <tr>
@@ -69,16 +74,22 @@
           </thead>
           <tbody id="tbody-parties"></tbody>
         </table>
-        <p id="empty-msg" class="muted" hidden>Sem registros.</p>
+        <p id="empty-msg" class="muted center" hidden>Sem registros.</p>
       </div>
     </section>
 
     <dialog id="party-dialog">
       <form method="dialog" id="party-form" class="form">
-        <h2 id="dialog-title">Nova Festa</h2>
-        <div class="grid">
+        <header class="dialog-header">
+          <h2 id="dialog-title">Nova Festa</h2>
+        </header>
+
+        <div class="grid two">
           <label>Data
             <input type="date" name="date" required>
+          </label>
+          <label>Salão
+            <input list="halls" name="hall" required>
           </label>
           <label>Início
             <input type="time" name="start_time" required>
@@ -86,14 +97,11 @@
           <label>Término
             <input type="time" name="end_time">
           </label>
-          <label>Salão
-            <input list="halls" name="hall" required>
-          </label>
         </div>
 
         <fieldset class="materials">
           <legend>Materiais</legend>
-          <div class="grid grid-5">
+          <div class="grid five">
             <label>Copos <input type="number" name="cups" min="0" value="0"></label>
             <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
             <label>Facas <input type="number" name="knives" min="0" value="0"></label>
@@ -102,7 +110,7 @@
           </div>
         </fieldset>
 
-        <div class="grid">
+        <div class="grid two">
           <label>Apartamento
             <input type="text" name="apartment" required placeholder="ex.: Bloco B, 304">
           </label>
@@ -115,17 +123,18 @@
           <textarea name="guests_text" rows="6" placeholder="Nome 1&#10;Nome 2&#10;..."></textarea>
         </label>
 
-        <menu class="actions">
-          <button value="cancel">Cancelar</button>
-          <button id="btn-save" value="default" class="primary">Salvar</button>
+        <menu class="dialog-actions">
+          <button value="cancel" class="btn">Cancelar</button>
+          <button id="btn-save" value="default" class="btn primary">Salvar</button>
         </menu>
       </form>
     </dialog>
 
+    <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
   </main>
 
   <footer class="footer">
-    <small>Uso interno — Vivendas de La Salles. Sem banco de dados; dados locais no navegador.</small>
+    <small>Uso interno — Vivendas de La Salles. Site estático; dados no navegador.</small>
   </footer>
 </body>
 </html>
