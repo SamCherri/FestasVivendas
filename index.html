@@ -4,16 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivendas de La Salles — Festas</title>
-  <!-- cache-bust v5 -->
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script defer src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script defer src="app.js?v=5"></script>
+  <script defer src="app.js?v=6"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/></svg>
+      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/>
+      </svg>
       <span>Vivendas de La Salles — Festas</span>
     </div>
     <nav id="nav-actions" hidden class="actions">
@@ -45,18 +46,9 @@
     <section id="app-section" hidden>
       <!-- DASHBOARD -->
       <section class="metrics">
-        <div class="metric-card">
-          <div class="metric-k">Hoje</div>
-          <div class="metric-v" id="kpi-today">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-k">Próximas 4 semanas</div>
-          <div class="metric-v" id="kpi-upcoming">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-k">Convidados (estimativa)</div>
-          <div class="metric-v" id="kpi-guests">0</div>
-        </div>
+        <div class="metric-card"><div class="metric-k">Hoje</div><div class="metric-v" id="kpi-today">0</div></div>
+        <div class="metric-card"><div class="metric-k">Próx. 4 semanas</div><div class="metric-v" id="kpi-upcoming">0</div></div>
+        <div class="metric-card"><div class="metric-k">Convidados (estim.)</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
       <div class="card chart-card">
         <h3 class="chart-title">Uso por salão (30 dias)</h3>
@@ -67,8 +59,9 @@
         <form id="filters" class="filters">
           <label>Data <input type="date" name="date"></label>
           <label>Salão
-            <input list="halls" name="hall" placeholder="Ex.: Salão 1">
-            <datalist id="halls"></datalist>
+            <select name="hall">
+              <option value="">Todos</option>
+            </select>
           </label>
           <button type="submit" class="btn">Filtrar</button>
           <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
@@ -99,7 +92,9 @@
         <header class="dialog-header"><h2 id="dialog-title">Nova Festa</h2></header>
         <div class="grid two">
           <label>Data <input type="date" name="date" required></label>
-          <label>Salão <input list="halls" name="hall" required></label>
+          <label>Salão
+            <select name="hall" required></select>
+          </label>
           <label>Início <input type="time" name="start_time" required></label>
           <label>Término <input type="time" name="end_time"></label>
         </div>
