@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivendas de La Salles — Festas</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- cache-bust v4 -->
+  <link rel="stylesheet" href="style.css?v=4">
   <script defer src="config.js"></script>
-  <script defer src="app.js"></script>
+  <script defer src="app.js?v=4"></script>
 </head>
 <body>
   <header class="topbar">
@@ -16,12 +17,11 @@
     </div>
     <nav id="nav-actions" hidden class="actions">
       <button id="btn-new" class="btn primary">Nova Festa</button>
-      <label class="btn outline file">
-        Importar
+      <label class="btn ghost file">Importar
         <input type="file" id="file-import" accept="application/json">
       </label>
-      <button id="btn-export" class="btn">JSON</button>
-      <button id="btn-export-csv" class="btn">CSV</button>
+      <button id="btn-export" class="btn ghost">JSON</button>
+      <button id="btn-export-csv" class="btn ghost">CSV</button>
       <span id="current-user" class="user"></span>
       <button id="btn-logout" class="btn link">Sair</button>
     </nav>
@@ -40,17 +40,15 @@
           <input type="password" name="password" required autocomplete="current-password" inputmode="numeric">
         </label>
         <button class="btn primary" type="submit">Entrar</button>
-        <p class="note">Aviso: login de conveniência (senhas estão no código). Uso interno.</p>
+        <p class="note">Login de conveniência. Uso interno.</p>
       </form>
     </section>
 
-    <!-- APLICAÇÃO -->
+    <!-- APP -->
     <section id="app-section" hidden>
       <div class="toolbar card">
         <form id="filters" class="filters">
-          <label>Data
-            <input type="date" name="date">
-          </label>
+          <label>Data <input type="date" name="date"></label>
           <label>Salão
             <input list="halls" name="hall" placeholder="Ex.: Salão 1">
             <datalist id="halls"></datalist>
@@ -69,14 +67,8 @@
         <table class="table" id="parties-table" aria-label="Festas cadastradas">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Início</th>
-              <th>Término</th>
-              <th>Salão</th>
-              <th>Apto</th>
-              <th>Morador</th>
-              <th>Materiais</th>
-              <th>Ações</th>
+              <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
+              <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
             </tr>
           </thead>
           <tbody id="tbody-parties"></tbody>
@@ -84,52 +76,33 @@
       </div>
     </section>
 
-    <!-- FORMULÁRIO EM MODAL -->
+    <!-- MODAL CADASTRO -->
     <dialog id="party-dialog">
       <form method="dialog" id="party-form" class="form">
-        <header class="dialog-header">
-          <h2 id="dialog-title">Nova Festa</h2>
-        </header>
-
+        <header class="dialog-header"><h2 id="dialog-title">Nova Festa</h2></header>
         <div class="grid two">
-          <label>Data
-            <input type="date" name="date" required>
-          </label>
-          <label>Salão
-            <input list="halls" name="hall" required>
-          </label>
-          <label>Início
-            <input type="time" name="start_time" required>
-          </label>
-          <label>Término
-            <input type="time" name="end_time">
-          </label>
+          <label>Data <input type="date" name="date" required></label>
+          <label>Salão <input list="halls" name="hall" required></label>
+          <label>Início <input type="time" name="start_time" required></label>
+          <label>Término <input type="time" name="end_time"></label>
         </div>
-
         <fieldset class="materials">
           <legend>Materiais</legend>
           <div class="grid five">
-            <label>Copos <input type="number" name="cups" min="0" value="0" inputmode="numeric"></label>
-            <label>Garfos <input type="number" name="forks" min="0" value="0" inputmode="numeric"></label>
-            <label>Facas <input type="number" name="knives" min="0" value="0" inputmode="numeric"></label>
-            <label>Colheres <input type="number" name="spoons" min="0" value="0" inputmode="numeric"></label>
-            <label>Pratos <input type="number" name="plates" min="0" value="0" inputmode="numeric"></label>
+            <label>Copos <input type="number" name="cups" min="0" value="0"></label>
+            <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
+            <label>Facas <input type="number" name="knives" min="0" value="0"></label>
+            <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
+            <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
           </div>
         </fieldset>
-
         <div class="grid two">
-          <label>Apartamento
-            <input type="text" name="apartment" required placeholder="Ex.: Bloco B, 304">
-          </label>
-          <label>Nome do morador
-            <input type="text" name="resident_name" required>
-          </label>
+          <label>Apartamento <input type="text" name="apartment" required placeholder="Ex.: Bloco B, 304"></label>
+          <label>Morador <input type="text" name="resident_name" required></label>
         </div>
-
         <label>Lista de convidados (um por linha)
-          <textarea name="guests_text" rows="6" placeholder="Nome 1\nNome 2\n..."></textarea>
+          <textarea name="guests_text" rows="6" placeholder="Nome 1&#10;Nome 2&#10;..."></textarea>
         </label>
-
         <menu class="dialog-actions">
           <button value="cancel" class="btn">Cancelar</button>
           <button id="btn-save" value="default" class="btn primary">Salvar</button>
@@ -137,8 +110,19 @@
       </form>
     </dialog>
 
+    <!-- MODAL VISUALIZAÇÃO -->
+    <dialog id="view-dialog">
+      <article class="view-card">
+        <header class="dialog-header"><h3>Detalhes da festa</h3></header>
+        <div id="view-content" class="view-content"></div>
+        <menu class="dialog-actions">
+          <button id="btn-close-view" class="btn">Fechar</button>
+        </menu>
+      </article>
+    </dialog>
+
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
-    <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+    <div id="toast" class="toast" hidden aria-live="polite"></div>
   </main>
 
   <footer class="footer">
