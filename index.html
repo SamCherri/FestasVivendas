@@ -11,38 +11,40 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <span class="logo" aria-hidden="true">🎉</span>
+      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/></svg>
       <span>Vivendas de La Salles — Festas</span>
     </div>
     <nav id="nav-actions" hidden class="actions">
       <button id="btn-new" class="btn primary">Nova Festa</button>
       <label class="btn outline file">
-        Importar JSON
+        Importar
         <input type="file" id="file-import" accept="application/json">
       </label>
-      <button id="btn-export" class="btn">Exportar JSON</button>
-      <button id="btn-export-csv" class="btn">Exportar CSV</button>
+      <button id="btn-export" class="btn">JSON</button>
+      <button id="btn-export-csv" class="btn">CSV</button>
       <span id="current-user" class="user"></span>
       <button id="btn-logout" class="btn link">Sair</button>
     </nav>
   </header>
 
   <main class="container">
-    <section id="login-section" class="card max-480">
+    <!-- LOGIN -->
+    <section id="login-section" class="card max-480 center-v">
       <h1>Acesso interno</h1>
-      <p class="muted">Somente zelador, síndico e encarregado.</p>
+      <p class="muted">Apenas zelador, síndico e encarregado.</p>
       <form id="login-form" class="form">
         <label>Usuário
-          <input name="username" required autocomplete="username">
+          <input name="username" required autocomplete="username" inputmode="text">
         </label>
         <label>Senha
-          <input type="password" name="password" required autocomplete="current-password">
+          <input type="password" name="password" required autocomplete="current-password" inputmode="numeric">
         </label>
         <button class="btn primary" type="submit">Entrar</button>
-        <p class="note">Aviso: login de conveniência (sem segurança forte). Use apenas internamente.</p>
+        <p class="note">Aviso: login de conveniência (senhas estão no código). Uso interno.</p>
       </form>
     </section>
 
+    <!-- APLICAÇÃO -->
     <section id="app-section" hidden>
       <div class="toolbar card">
         <form id="filters" class="filters">
@@ -50,7 +52,7 @@
             <input type="date" name="date">
           </label>
           <label>Salão
-            <input list="halls" name="hall" placeholder="ex.: Salão de Festas 1">
+            <input list="halls" name="hall" placeholder="Ex.: Salão 1">
             <datalist id="halls"></datalist>
           </label>
           <button type="submit" class="btn">Filtrar</button>
@@ -58,6 +60,11 @@
         </form>
       </div>
 
+      <!-- LISTA EM CARDS (MOBILE) -->
+      <div id="cards" class="cards"></div>
+      <p id="empty-msg" class="muted center" hidden>Sem registros.</p>
+
+      <!-- TABELA (DESKTOP) -->
       <div class="card table-wrapper">
         <table class="table" id="parties-table" aria-label="Festas cadastradas">
           <thead>
@@ -74,10 +81,10 @@
           </thead>
           <tbody id="tbody-parties"></tbody>
         </table>
-        <p id="empty-msg" class="muted center" hidden>Sem registros.</p>
       </div>
     </section>
 
+    <!-- FORMULÁRIO EM MODAL -->
     <dialog id="party-dialog">
       <form method="dialog" id="party-form" class="form">
         <header class="dialog-header">
@@ -102,17 +109,17 @@
         <fieldset class="materials">
           <legend>Materiais</legend>
           <div class="grid five">
-            <label>Copos <input type="number" name="cups" min="0" value="0"></label>
-            <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
-            <label>Facas <input type="number" name="knives" min="0" value="0"></label>
-            <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
-            <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
+            <label>Copos <input type="number" name="cups" min="0" value="0" inputmode="numeric"></label>
+            <label>Garfos <input type="number" name="forks" min="0" value="0" inputmode="numeric"></label>
+            <label>Facas <input type="number" name="knives" min="0" value="0" inputmode="numeric"></label>
+            <label>Colheres <input type="number" name="spoons" min="0" value="0" inputmode="numeric"></label>
+            <label>Pratos <input type="number" name="plates" min="0" value="0" inputmode="numeric"></label>
           </div>
         </fieldset>
 
         <div class="grid two">
           <label>Apartamento
-            <input type="text" name="apartment" required placeholder="ex.: Bloco B, 304">
+            <input type="text" name="apartment" required placeholder="Ex.: Bloco B, 304">
           </label>
           <label>Nome do morador
             <input type="text" name="resident_name" required>
@@ -120,7 +127,7 @@
         </div>
 
         <label>Lista de convidados (um por linha)
-          <textarea name="guests_text" rows="6" placeholder="Nome 1&#10;Nome 2&#10;..."></textarea>
+          <textarea name="guests_text" rows="6" placeholder="Nome 1\nNome 2\n..."></textarea>
         </label>
 
         <menu class="dialog-actions">
@@ -130,11 +137,12 @@
       </form>
     </dialog>
 
+    <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
     <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
   </main>
 
   <footer class="footer">
-    <small>Uso interno — Vivendas de La Salles. Site estático; dados no navegador.</small>
+    <small>Uso interno — Site estático; dados no navegador.</small>
   </footer>
 </body>
 </html>
