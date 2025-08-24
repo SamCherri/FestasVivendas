@@ -1,56 +1,47 @@
-/* App estático sem banco de dados — dados no localStorage
-   Perfis: zelador, sindico, encarregado (config.js)
-*/
+/* App estático responsivo — sem banco; dados no localStorage */
 (function () {
   'use strict';
 
   // ---------- Helpers ----------
   const $ = (sel, el=document) => el.querySelector(sel);
   const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-
-  const fmtDate = (d) => {
-    try {
-      if (typeof d === 'string') return d;
-      return d.toISOString().slice(0,10);
-    } catch { return ''; }
+  const toast = (msg) => {
+    const el = $('#toast'); el.textContent = msg; el.hidden = false;
+    setTimeout(() => { el.hidden = true; }, 1800);
   };
-  const fmtTime = (t) => t || '';
+
+  const fmtDate = (d) => { try { if (typeof d === 'string') return d; return d.toISOString().slice(0,10); } catch { return ''; } };
   const parseTime = (str) => {
-    if (!str) return null;
-    const [h,m] = str.split(':').map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) return null;
-    return h * 60 + m; // minutos desde 00:00
+    if (!str) return null; const [h,m] = str.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null; return h * 60 + m;
   };
   const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
 
-  const loadParties = () => {
-    try {
-      return JSON.parse(localStorage.getItem(CONFIG.storageKey)) || [];
-    } catch { return []; }
-  };
+  const loadParties = () => { try { return JSON.parse(localStorage.getItem(CONFIG.storageKey)) || []; } catch { return []; } };
   const saveParties = (rows) => localStorage.setItem(CONFIG.storageKey, JSON.stringify(rows));
 
-  const getUser = () => {
-    try { return JSON.parse(sessionStorage.getItem('vls_user')) || null; } catch { return null; }
-  };
+  const getUser = () => { try { return JSON.parse(sessionStorage.getItem('vls_user')) || null; } catch { return null; } };
   const setUser = (u) => sessionStorage.setItem('vls_user', JSON.stringify(u));
   const clearUser = () => sessionStorage.removeItem('vls_user');
 
-  const byDateThenTimeDesc = (a,b) => {
-    if (a.date !== b.date) return a.date > b.date ? -1 : 1;
-    return (b.start_time || '').localeCompare(a.start_time || '');
-  };
+  const byDateThenTimeDesc = (a,b) => { if (a.date !== b.date) return a.date > b.date ? -1 : 1; return (b.start_time||'').localeCompare(a.start_time||''); };
 
   const overlaps = (aStart, aEnd, bStart, bEnd) => {
-    const A1 = parseTime(aStart) ?? -1;
-    const A2 = parseTime(aEnd) ?? parseTime(aStart);
-    const B1 = parseTime(bStart) ?? -1;
-    const B2 = parseTime(bEnd) ?? parseTime(bStart);
+    const A1 = parseTime(aStart) ?? -1, A2 = parseTime(aEnd) ?? parseTime(aStart);
+    const B1 = parseTime(bStart) ?? -1, B2 = parseTime(bEnd) ?? parseTime(bStart);
     return !(A2 <= B1 || B2 <= A1);
   };
+  const checkConflict = (rows, cand, ignoreId=null) =>
+    rows.some(r => r.id !== ignoreId &&
+      r.date === cand.date &&
+      r.hall.trim().toLowerCase() === cand.hall.trim().toLowerCase() &&
+      overlaps(r.start_time, r.end_time, cand.start_time, cand.end_time));
 
-  const checkConflict = (rows, candidate, ignoreId=null) => {
-    return rows.some(r => r.id !== ignoreId && r.date === candidate.date && r.hall.trim().toLowerCase() === candidate.hall.trim().toLowerCase() && overlaps(r.start_time, r.end_time, candidate.start_time, candidate.end_time));
+  const toCSV = (rows) => {
+    const headers = ['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text'];
+    const esc = (s) => `"${String(s).replace(/\"/g,'\"\"')}"`;
+    const lines = [headers.join(',')].concat(rows.map(r => headers.map(h => esc(r[h] ?? '')).join(',')));
+    return lines.join('\n');
   };
 
   // ---------- Elements ----------
@@ -67,6 +58,7 @@
   const btnClearFilters = $('#btn-clear-filters');
   const btnNew = $('#btn-new');
   const btnExport = $('#btn-export');
+  const btnExportCSV = $('#btn-export-csv');
   const fileImport = $('#file-import');
   const btnLogout = $('#btn-logout');
 
@@ -75,11 +67,7 @@
   const dialogTitle = $('#dialog-title');
 
   // ---------- State ----------
-  let state = {
-    filterDate: '',
-    filterHall: '',
-    editingId: null,
-  };
+  let state = { filterDate: '', filterHall: '', editingId: null };
 
   // ---------- Init ----------
   function init() {
@@ -92,15 +80,10 @@
       const fd = new FormData(loginForm);
       const username = (fd.get('username') || '').toString().trim();
       const password = (fd.get('password') || '').toString();
-
       const user = CONFIG.users.find(u => u.username === username && u.password === password);
-      if (!user) {
-        alert('Usuário ou senha inválidos.');
-        return;
-      }
+      if (!user) return toast('Usuário ou senha inválidos.');
       setUser({ username: user.username, role: user.role });
-      applyAuthUI();
-      render();
+      applyAuthUI(); render(); toast('Login efetuado.');
     });
 
     // filters
@@ -111,77 +94,55 @@
       state.filterHall = (fd.get('hall') || '').toString().trim().toLowerCase();
       renderTable();
     });
-    btnClearFilters.addEventListener('click', () => {
-      filtersForm.reset();
-      state.filterDate = '';
-      state.filterHall = '';
-      renderTable();
-    });
+    btnClearFilters.addEventListener('click', () => { filtersForm.reset(); state.filterDate=''; state.filterHall=''; renderTable(); });
 
     // new
     btnNew.addEventListener('click', () => openDialogForCreate());
 
-    // export
+    // export JSON
     btnExport.addEventListener('click', () => {
       const rows = loadParties();
       const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'festas-export.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'festas-export.json'; a.click(); URL.revokeObjectURL(a.href);
+    });
+
+    // export CSV
+    btnExportCSV.addEventListener('click', () => {
+      const rows = loadParties();
+      const blob = new Blob([toCSV(rows)], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'festas-export.csv'; a.click(); URL.revokeObjectURL(a.href);
     });
 
     // import
     fileImport.addEventListener('change', async (e) => {
-      const f = e.target.files?.[0];
-      if (!f) return;
+      const f = e.target.files?.[0]; if (!f) return;
       try {
         const text = await f.text();
-        const data = JSON.parse(text);
-        if (!Array.isArray(data)) throw new Error('Formato inválido');
-        saveParties(data);
-        renderTable();
-        alert('Importação concluída.');
-      } catch (err) {
-        alert('Falha ao importar JSON: ' + err.message);
-      } finally {
-        fileImport.value = '';
-      }
+        const data = JSON.parse(text); if (!Array.isArray(data)) throw new Error('JSON deve ser uma lista');
+        saveParties(data); renderTable(); toast('Importação concluída.');
+      } catch (err) { toast('Falha ao importar: ' + err.message); }
+      finally { fileImport.value = ''; }
     });
 
     // logout
-    btnLogout.addEventListener('click', () => {
-      clearUser();
-      applyAuthUI();
-    });
+    btnLogout.addEventListener('click', () => { clearUser(); applyAuthUI(); toast('Sessão encerrada.'); });
 
     // dialog
-    dialog.addEventListener('close', () => {
-      partyForm.reset();
-      state.editingId = null;
-    });
-    partyForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-    });
+    dialog.addEventListener('close', () => { partyForm.reset(); state.editingId = null; });
+    partyForm.addEventListener('submit', (e) => e.preventDefault());
     $('#btn-save').addEventListener('click', onSaveParty);
 
-    applyAuthUI();
-    render();
+    applyAuthUI(); render();
   }
 
   function applyAuthUI() {
     const user = getUser();
     const logged = !!user;
-    loginSection.hidden = logged;
-    appSection.hidden = !logged;
-    navActions.hidden = !logged;
+    loginSection.hidden = logged; appSection.hidden = !logged; navActions.hidden = !logged;
     if (user) currentUserSpan.textContent = `${user.username} (${user.role})`;
   }
 
-  function render() {
-    renderTable();
-  }
+  function render() { renderTable(); }
 
   function filtered(rows) {
     return rows.filter(r => {
@@ -191,47 +152,42 @@
     }).sort(byDateThenTimeDesc);
   }
 
+  function rowHTML(r) {
+    const mats = `copos ${r.cups||0}, garfos ${r.forks||0}, facas ${r.knives||0}, colheres ${r.spoons||0}, pratos ${r.plates||0}`;
+    return `
+      <tr>
+        <td data-label="Data">${r.date}</td>
+        <td data-label="Início">${r.start_time || ''}</td>
+        <td data-label="Término">${r.end_time || ''}</td>
+        <td data-label="Salão">${r.hall}</td>
+        <td data-label="Apto">${r.apartment}</td>
+        <td data-label="Morador">${r.resident_name}</td>
+        <td data-label="Materiais">${mats}</td>
+        <td data-label="Ações">
+          <div class="row-actions">
+            <button data-act="edit" data-id="${r.id}" class="btn">Editar</button>
+            <button data-act="view" data-id="${r.id}" class="btn">Ver</button>
+            <button data-act="delete" data-id="${r.id}" class="btn danger">Excluir</button>
+          </div>
+        </td>
+      </tr>`;
+  }
+
   function renderTable() {
     const rows = filtered(loadParties());
     tbody.innerHTML = '';
-    if (!rows.length) {
-      emptyMsg.hidden = false;
-      return;
-    }
+    if (!rows.length) { emptyMsg.hidden = false; return; }
     emptyMsg.hidden = true;
-
-    for (const r of rows) {
-      const tr = document.createElement('tr');
-      const mats = `copos ${r.cups||0}, garfos ${r.forks||0}, facas ${r.knives||0}, colheres ${r.spoons||0}, pratos ${r.plates||0}`;
-      tr.innerHTML = `
-        <td>${r.date}</td>
-        <td>${r.start_time || ''}</td>
-        <td>${r.end_time || ''}</td>
-        <td>${r.hall}</td>
-        <td>${r.apartment}</td>
-        <td>${r.resident_name}</td>
-        <td>${mats}</td>
-        <td>
-          <div class="row-actions">
-            <button data-act="edit" data-id="${r.id}">Editar</button>
-            <button data-act="view" data-id="${r.id}">Ver</button>
-            <button class="danger" data-act="delete" data-id="${r.id}">Excluir</button>
-          </div>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    tbody.querySelectorAll('button[data-act="edit"]').forEach(btn => btn.addEventListener('click', () => openDialogForEdit(btn.dataset.id)));
-    tbody.querySelectorAll('button[data-act="view"]').forEach(btn => btn.addEventListener('click', () => viewParty(btn.dataset.id)));
-    tbody.querySelectorAll('button[data-act="delete"]').forEach(btn => btn.addEventListener('click', () => deleteParty(btn.dataset.id)));
+    tbody.innerHTML = rows.map(rowHTML).join('');
+    tbody.querySelectorAll('button[data-act="edit"]').forEach(b => b.addEventListener('click', () => openDialogForEdit(b.dataset.id)));
+    tbody.querySelectorAll('button[data-act="view"]').forEach(b => b.addEventListener('click', () => viewParty(b.dataset.id)));
+    tbody.querySelectorAll('button[data-act="delete"]').forEach(b => b.addEventListener('click', () => deleteParty(b.dataset.id)));
   }
 
   function openDialogForCreate() {
-    dialogTitle.textContent = 'Nova Festa';
-    partyForm.reset();
     $('#party-form [name="date"]').value = fmtDate(new Date());
-    dialog.showModal();
+    $('#party-form [name="start_time"]').value = '';
+    dialogTitle.textContent = 'Nova Festa'; dialog.showModal();
   }
 
   function fillForm(p) {
@@ -251,48 +207,35 @@
 
   function openDialogForEdit(id) {
     const rows = loadParties();
-    const p = rows.find(x => x.id === id);
-    if (!p) return;
-    dialogTitle.textContent = 'Editar Festa';
-    fillForm(p);
-    state.editingId = id;
-    dialog.showModal();
+    const p = rows.find(x => x.id === id); if (!p) return;
+    state.editingId = id; dialogTitle.textContent = 'Editar Festa'; fillForm(p); dialog.showModal();
   }
 
   function viewParty(id) {
     const rows = loadParties();
-    const p = rows.find(x => x.id === id);
-    if (!p) return;
+    const p = rows.find(x => x.id === id); if (!p) return;
     const mats = `copos ${p.cups||0}, garfos ${p.forks||0}, facas ${p.knives||0}, colheres ${p.spoons||0}, pratos ${p.plates||0}`;
     const guests = (p.guests_text || '').trim().split(/\n+/).filter(Boolean).map(g => `• ${g}`).join('\n');
-    const info = `Data: ${p.date}
-Horário: ${p.start_time || ''}${p.end_time ? ' - ' + p.end_time : ''}
+    alert(`Data: ${p.date}
+Início: ${p.start_time || ''}  Término: ${p.end_time || ''}
 Salão: ${p.hall}
-Apartamento: ${p.apartment}
+Apto: ${p.apartment}
 Morador: ${p.resident_name}
 Materiais: ${mats}
 Convidados:
-${guests || '(não informado)'}`;
-    alert(info);
+${guests || '(não informado)'}`);
   }
 
   function deleteParty(id) {
-    const user = getUser();
-    if (!user) return;
-    if (CONFIG.deleteRequiresSindico && user.role !== 'sindico') {
-      alert('Somente o síndico pode excluir.');
-      return;
-    }
+    const user = getUser(); if (!user) return;
+    if (CONFIG.deleteRequiresSindico && user.role !== 'sindico') return toast('Somente o síndico pode excluir.');
     if (!confirm('Confirmar exclusão?')) return;
-    const rows = loadParties();
-    const next = rows.filter(x => x.id !== id);
-    saveParties(next);
-    renderTable();
+    const rows = loadParties().filter(x => x.id !== id); saveParties(rows); renderTable(); toast('Festa removida.');
   }
 
   function readForm() {
     const fd = new FormData(partyForm);
-    const obj = {
+    const o = {
       id: state.editingId || genId(),
       date: (fd.get('date') || '').toString(),
       start_time: (fd.get('start_time') || '').toString(),
@@ -307,26 +250,17 @@ ${guests || '(não informado)'}`;
       resident_name: (fd.get('resident_name') || '').toString(),
       guests_text: (fd.get('guests_text') || '').toString()
     };
-    // validação básica
-    if (!obj.date || !obj.start_time || !obj.hall || !obj.apartment || !obj.resident_name) {
-      alert('Preencha os campos obrigatórios.');
-      return null;
-    }
-    return obj;
+    if (!o.date || !o.start_time || !o.hall || !o.apartment || !o.resident_name) { toast('Preencha os campos obrigatórios.'); return null; }
+    return o;
   }
 
-  function onSaveParty(e) {
-    const user = getUser();
-    if (!user) return;
-
-    const party = readForm();
-    if (!party) return;
+  function onSaveParty() {
+    const user = getUser(); if (!user) return;
+    const party = readForm(); if (!party) return;
 
     const rows = loadParties();
     const hasConflict = checkConflict(rows, party, state.editingId);
-    if (hasConflict && !confirm('Conflito de horário no mesmo salão. Deseja salvar mesmo assim?')) {
-      return;
-    }
+    if (hasConflict && !confirm('Conflito de horário no mesmo salão. Deseja salvar mesmo assim?')) return;
 
     if (state.editingId) {
       const idx = rows.findIndex(x => x.id === state.editingId);
@@ -334,9 +268,7 @@ ${guests || '(não informado)'}`;
     } else {
       rows.push(party);
     }
-    saveParties(rows);
-    dialog.close();
-    renderTable();
+    saveParties(rows); dialog.close(); renderTable(); toast('Festa salva.');
   }
 
   // Boot
