@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivendas de La Salles — Festas</title>
-  <!-- cache-bust v4 -->
-  <link rel="stylesheet" href="style.css?v=4">
+  <!-- cache-bust v5 -->
+  <link rel="stylesheet" href="style.css?v=5">
   <script defer src="config.js"></script>
-  <script defer src="app.js?v=4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script defer src="app.js?v=5"></script>
 </head>
 <body>
   <header class="topbar">
@@ -33,12 +34,8 @@
       <h1>Acesso interno</h1>
       <p class="muted">Apenas zelador, síndico e encarregado.</p>
       <form id="login-form" class="form">
-        <label>Usuário
-          <input name="username" required autocomplete="username" inputmode="text">
-        </label>
-        <label>Senha
-          <input type="password" name="password" required autocomplete="current-password" inputmode="numeric">
-        </label>
+        <label>Usuário <input name="username" required autocomplete="username"></label>
+        <label>Senha <input type="password" name="password" required autocomplete="current-password"></label>
         <button class="btn primary" type="submit">Entrar</button>
         <p class="note">Login de conveniência. Uso interno.</p>
       </form>
@@ -46,6 +43,26 @@
 
     <!-- APP -->
     <section id="app-section" hidden>
+      <!-- DASHBOARD -->
+      <section class="metrics">
+        <div class="metric-card">
+          <div class="metric-k">Hoje</div>
+          <div class="metric-v" id="kpi-today">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-k">Próximas 4 semanas</div>
+          <div class="metric-v" id="kpi-upcoming">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-k">Convidados (estimativa)</div>
+          <div class="metric-v" id="kpi-guests">0</div>
+        </div>
+      </section>
+      <div class="card chart-card">
+        <h3 class="chart-title">Uso por salão (30 dias)</h3>
+        <canvas id="chart-halls" height="150"></canvas>
+      </div>
+
       <div class="toolbar card">
         <form id="filters" class="filters">
           <label>Data <input type="date" name="date"></label>
@@ -64,7 +81,7 @@
 
       <!-- TABELA (DESKTOP) -->
       <div class="card table-wrapper">
-        <table class="table" id="parties-table" aria-label="Festas cadastradas">
+        <table class="table" aria-label="Festas cadastradas">
           <thead>
             <tr>
               <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
