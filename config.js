@@ -1,7 +1,8 @@
-// Mantive a mesma storageKey de v5 para não perder dados existentes.
+// v7 - Sheets backend
 const CONFIG = {
-  storageKey: 'vls_festas_v5',
   halls: ['Gourmet', 'Menor'],
+  apiUrl: 'https://script.google.com/macros/s/XXXX/exec',         // ex.: https://script.google.com/macros/s/XXXX/exec
+  apiKey: '29913256989517',     // o mesmo definido no Apps Script
   deleteRequiresSindico: false,
   users: [
     { username: 'zelador',    password: '123456', role: 'zelador' },
