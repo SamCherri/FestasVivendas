@@ -1,6 +1,7 @@
+// Mantive a mesma storageKey de v5 para não perder dados existentes.
 const CONFIG = {
   storageKey: 'vls_festas_v5',
-  halls: ['Salão de Festas 1', 'Salão de Festas 2', 'Churrasqueira', 'Salão Gourmet'],
+  halls: ['Gourmet', 'Menor'],
   deleteRequiresSindico: false,
   users: [
     { username: 'zelador',    password: '123456', role: 'zelador' },
