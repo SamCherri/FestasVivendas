@@ -1,6 +1,6 @@
 // Configurações (sem banco de dados) — edite aqui
 const CONFIG = {
-  storageKey: 'vls_festas_v3',
+  storageKey: 'vls_festas_v4',
   halls: ['Salão de Festas 1', 'Salão de Festas 2', 'Churrasqueira', 'Salão Gourmet'],
   deleteRequiresSindico: false, // true => só síndico pode excluir
   users: [
