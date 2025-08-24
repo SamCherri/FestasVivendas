@@ -1,19 +1,22 @@
-/* App estático — foco em mobile (cards), sem banco; dados no localStorage */
+/* App estático — Tema Pro v4 (mobile-first). Sem banco; dados no localStorage */
 (function () {
   'use strict';
 
   // ---------- Helpers ----------
-  const $ = (sel, el=document) => el.querySelector(sel);
+  const $  = (sel, el=document) => el.querySelector(sel);
   const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
   const toast = (msg) => { const el = $('#toast'); el.textContent = msg; el.hidden = false; setTimeout(()=>el.hidden=true, 1800); };
   const fmtDate = (d) => { try { if (typeof d === 'string') return d; return d.toISOString().slice(0,10); } catch { return ''; } };
   const parseTime = (str) => { if (!str) return null; const [h,m] = str.split(':').map(Number); return (h*60+m); };
   const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+
   const loadParties = () => { try { return JSON.parse(localStorage.getItem(CONFIG.storageKey)) || []; } catch { return []; } };
   const saveParties = (rows) => localStorage.setItem(CONFIG.storageKey, JSON.stringify(rows));
+
   const getUser = () => { try { return JSON.parse(sessionStorage.getItem('vls_user')) || null; } catch { return null; } };
   const setUser = (u) => sessionStorage.setItem('vls_user', JSON.stringify(u));
   const clearUser = () => sessionStorage.removeItem('vls_user');
+
   const byDateThenTimeDesc = (a,b) => (a.date===b.date? (b.start_time||'').localeCompare(a.start_time||'') : (a.date>b.date?-1:1));
   const overlaps = (a1,a2,b1,b2) => { const A1=parseTime(a1)??-1, A2=parseTime(a2)??parseTime(a1), B1=parseTime(b1)??-1, B2=parseTime(b2)??parseTime(b1); return !(A2<=B1 || B2<=A1); };
   const conflict = (rows,c,ignore=null)=> rows.some(r=> r.id!==ignore && r.date===c.date && r.hall.trim().toLowerCase()===c.hall.trim().toLowerCase() && overlaps(r.start_time,r.end_time,c.start_time,c.end_time));
@@ -26,6 +29,9 @@
   const loginForm = $('#login-form'), filtersForm = $('#filters'), btnClearFilters = $('#btn-clear-filters');
   const btnNew = $('#btn-new'), btnExport = $('#btn-export'), btnExportCSV = $('#btn-export-csv'), fileImport = $('#file-import'), btnLogout = $('#btn-logout');
   const dialog = $('#party-dialog'), partyForm = $('#party-form'), dialogTitle = $('#dialog-title');
+
+  // View dialog
+  const viewDialog = $('#view-dialog'), viewContent = $('#view-content'), btnCloseView = $('#btn-close-view');
 
   // ---------- State ----------
   let state = { filterDate:'', filterHall:'', editingId:null };
@@ -61,11 +67,12 @@
     fab.addEventListener('click', openDialogForCreate);
 
     btnExport.addEventListener('click', ()=>{
-      const rows = loadParties(); const blob = new Blob([JSON.stringify(rows,null,2)],{type:'application/json'});
+      const rows = loadParties();
+      const blob = new Blob([JSON.stringify(rows,null,2)],{type:'application/json'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='festas-export.json'; a.click(); URL.revokeObjectURL(a.href);
     });
     btnExportCSV.addEventListener('click', ()=>{
-      const rows = loadParties(); const csv = toCSV(rows);
+      const rows = loadParties(), csv = toCSV(rows);
       const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='festas-export.csv'; a.click(); URL.revokeObjectURL(a.href);
     });
@@ -81,6 +88,9 @@
     dialog.addEventListener('close', ()=>{ partyForm.reset(); state.editingId=null; });
     partyForm.addEventListener('submit', e=>e.preventDefault());
     $('#btn-save').addEventListener('click', onSaveParty);
+
+    // view dialog
+    btnCloseView.addEventListener('click', ()=> viewDialog.close());
 
     applyAuthUI(); render();
   }
@@ -131,7 +141,7 @@
         <div class="row-actions">
           <button class="btn" data-act="edit">Editar</button>
           <button class="btn" data-act="view">Ver</button>
-          <button class="btn danger" data-act="delete">Excluir</button>
+          <button class="btn" data-act="delete">Excluir</button>
         </div>
       </article>`;
   }
@@ -156,7 +166,7 @@
           <div class="row-actions">
             <button class="btn" data-act="edit" data-id="${r.id}">Editar</button>
             <button class="btn" data-act="view" data-id="${r.id}">Ver</button>
-            <button class="btn danger" data-act="delete" data-id="${r.id}">Excluir</button>
+            <button class="btn" data-act="delete" data-id="${r.id}">Excluir</button>
           </div>
         </td>
       </tr>`;
@@ -189,19 +199,30 @@
   }
   function openDialogForEdit(id){
     const rows = loadParties(); const p = rows.find(x=>x.id===id); if(!p) return;
-    state.editingId = id; dialogTitle.textContent='Editar Festa'; fillForm(p); dialog.showModal();
+    state.editingId = id; dialogTitle.textContent = 'Editar Festa'; fillForm(p); dialog.showModal();
   }
+
   function viewParty(id){
     const p = loadParties().find(x=>x.id===id); if(!p) return;
-    const guests = (p.guests_text||'').trim().split(/\n+/).filter(Boolean).map(g=>`• ${g}`).join('\n') || '(não informado)';
-    alert(`Data: ${p.date}\nInício: ${p.start_time || ''}${p.end_time ? ' - '+p.end_time : ''}\nSalão: ${p.hall}\nApto: ${p.apartment}\nMorador: ${p.resident_name}\nMateriais: ${matsText(p)}\nConvidados:\n${guests}`);
+    viewContent.innerHTML = `
+      <div class="view-line"><strong>Data</strong><span>${p.date}</span></div>
+      <div class="view-line"><strong>Início</strong><span>${p.start_time||''}</span></div>
+      <div class="view-line"><strong>Término</strong><span>${p.end_time||''}</span></div>
+      <div class="view-line"><strong>Salão</strong><span>${p.hall}</span></div>
+      <div class="view-line"><strong>Apto</strong><span>${p.apartment}</span></div>
+      <div class="view-line"><strong>Morador</strong><span>${p.resident_name}</span></div>
+      <div class="view-line"><strong>Materiais</strong><span>${matsText(p)}</span></div>
+      <div class="view-line"><strong>Convidados</strong><span>${(p.guests_text||'').replace(/\\n/g,'<br>') || '(não informado)'}</span></div>`;
+    viewDialog.showModal();
   }
+
   function deleteParty(id){
     const user=getUser(); if(!user) return;
     if(CONFIG.deleteRequiresSindico && user.role!=='sindico') return toast('Somente o síndico pode excluir.');
     if(!confirm('Confirmar exclusão?')) return;
     const next = loadParties().filter(x=>x.id!==id); saveParties(next); render(); toast('Festa removida.');
   }
+
   function readForm(){
     const fd=new FormData(partyForm);
     const o = {
@@ -222,6 +243,7 @@
     if(!o.date || !o.start_time || !o.hall || !o.apartment || !o.resident_name){ toast('Preencha os campos obrigatórios.'); return null; }
     return o;
   }
+
   function onSaveParty(){
     const user=getUser(); if(!user) return;
     const party=readForm(); if(!party) return;
