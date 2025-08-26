@@ -5,31 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivendas de La Salles — Festas</title>
 
-  <!-- cache-bust v7 -->
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 
-  <!-- sua config permanece em arquivo separado -->
-  <script defer src="config.js?v=7"></script>
-
-  <!-- gráfico (dashboard) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- app -->
-  <script defer src="app.js?v=7"></script>
+  <!-- Config do Firebase (só exporta o objeto) -->
+  <script defer src="config.js?v=8" type="module"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/>
-      </svg>
+      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/></svg>
       <span>Vivendas de La Salles — Festas</span>
     </div>
     <nav id="nav-actions" hidden class="actions">
       <button id="btn-new" class="btn primary">Nova Festa</button>
-      <label class="btn ghost file">Importar
-        <input type="file" id="file-import" accept="application/json">
-      </label>
       <button id="btn-export" class="btn ghost">JSON</button>
       <button id="btn-export-csv" class="btn ghost">CSV</button>
       <span id="current-user" class="user"></span>
@@ -41,27 +29,21 @@
     <!-- LOGIN -->
     <section id="login-section" class="card max-480 center-v">
       <h1>Acesso interno</h1>
-      <p class="muted">Apenas zelador, síndico e encarregado.</p>
+      <p class="muted">Entre com e-mail e senha cadastrados no Firebase.</p>
       <form id="login-form" class="form">
-        <label>Usuário <input name="username" required autocomplete="username"></label>
+        <label>E-mail <input name="email" type="email" required autocomplete="username"></label>
         <label>Senha <input type="password" name="password" required autocomplete="current-password"></label>
         <button class="btn primary" type="submit">Entrar</button>
-        <p class="note">Login de conveniência. Uso interno.</p>
       </form>
     </section>
 
     <!-- APP -->
     <section id="app-section" hidden>
-      <!-- DASHBOARD -->
       <section class="metrics">
         <div class="metric-card"><div class="metric-k">Hoje</div><div class="metric-v" id="kpi-today">0</div></div>
         <div class="metric-card"><div class="metric-k">Próx. 4 semanas</div><div class="metric-v" id="kpi-upcoming">0</div></div>
-        <div class="metric-card"><div class="metric-k">Convidados (estim.)</div><div class="metric-v" id="kpi-guests">0</div></div>
+        <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
-      <div class="card chart-card">
-        <h3 class="chart-title">Uso por salão (30 dias)</h3>
-        <canvas id="chart-halls" height="150"></canvas>
-      </div>
 
       <div class="toolbar card">
         <form id="filters" class="filters">
@@ -76,13 +58,11 @@
         </form>
       </div>
 
-      <!-- LISTA EM CARDS (MOBILE) -->
       <div id="cards" class="cards"></div>
       <p id="empty-msg" class="muted center" hidden>Sem registros.</p>
 
-      <!-- TABELA (DESKTOP) -->
       <div class="card table-wrapper">
-        <table class="table" aria-label="Festas cadastradas">
+        <table class="table" aria-label="Festas">
           <thead>
             <tr>
               <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
@@ -94,15 +74,13 @@
       </div>
     </section>
 
-    <!-- MODAL CADASTRO -->
+    <!-- MODAL -->
     <dialog id="party-dialog">
       <form method="dialog" id="party-form" class="form">
         <header class="dialog-header"><h2 id="dialog-title">Nova Festa</h2></header>
         <div class="grid two">
           <label>Data <input type="date" name="date" required></label>
-          <label>Salão
-            <select name="hall" required></select>
-          </label>
+          <label>Salão <select name="hall" required></select></label>
           <label>Início <input type="time" name="start_time" required></label>
           <label>Término <input type="time" name="end_time"></label>
         </div>
@@ -117,11 +95,11 @@
           </div>
         </fieldset>
         <div class="grid two">
-          <label>Apartamento <input type="text" name="apartment" required placeholder="Ex.: Bloco B, 304"></label>
+          <label>Apartamento <input type="text" name="apartment" required></label>
           <label>Morador <input type="text" name="resident_name" required></label>
         </div>
         <label>Lista de convidados (um por linha)
-          <textarea name="guests_text" rows="6" placeholder="Nome 1&#10;Nome 2&#10;..."></textarea>
+          <textarea name="guests_text" rows="6"></textarea>
         </label>
         <menu class="dialog-actions">
           <button value="cancel" class="btn">Cancelar</button>
@@ -130,7 +108,6 @@
       </form>
     </dialog>
 
-    <!-- MODAL VISUALIZAÇÃO -->
     <dialog id="view-dialog">
       <article class="view-card">
         <header class="dialog-header"><h3>Detalhes da festa</h3></header>
@@ -146,7 +123,13 @@
   </main>
 
   <footer class="footer">
-    <small>Uso interno — Site estático; dados no navegador.</small>
+    <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
+
+  <!-- Firebase SDKs (ES Modules via CDN) + App -->
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
+  <script type="module" src="app.js?v=8"></script>
 </body>
 </html>
