@@ -1,4 +1,4 @@
-// app.js v8 - Firebase (Auth + Firestore) — site estático (GitHub Pages)
+// app.js v8.2 - Firebase (Auth + Firestore) — site estático (GitHub Pages)
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -12,6 +12,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
   const $=(s,el=document)=>el.querySelector(s);
   const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
   const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,1800);};
+  const showErr=(m)=>{const el=$('#errbox'); if(!el) return; el.textContent=String(m||'Erro'); el.style.display='block';};
   const fmtDate=(d)=>{try{if(typeof d==='string')return d;return d.toISOString().slice(0,10);}catch{return '';}};
   const parseTime=(str)=>{if(!str)return null;const [h,m]=str.split(':').map(Number);return h*60+m;};
   const overlaps=(a1,a2,b1,b2)=>{const A1=parseTime(a1)??-1,A2=parseTime(a2)??parseTime(a1),B1=parseTime(b1)??-1,B2=parseTime(b2)??parseTime(b1);return !(A2<=B1||B2<=A1);};
@@ -27,9 +28,13 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
   // Cache
   let CACHE = [];
   async function reloadAll(){
-    const snap = await getDocs(festasCol);
-    CACHE = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    render();
+    try{
+      const snap = await getDocs(festasCol);
+      CACHE = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      render();
+    }catch(err){
+      console.error(err); showErr('Falha ao carregar dados: ' + (err.code || err.message));
+    }
   }
   const getAll = ()=> CACHE.slice();
 
@@ -116,6 +121,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       </div></td></tr>`;
   }
   function renderTable(rows){
+    const tbody=$('#tbody-parties');
     tbody.innerHTML = rows.map(rowHTML).join('');
     $$('[data-act="edit"]',tbody).forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
     $$('[data-act="view"]',tbody).forEach(b=>b.addEventListener('click',()=>showView(b.dataset.id)));
@@ -183,20 +189,31 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
     const conflict = rows.some(r => r.id!==p.id && r.date===p.date && r.hall===p.hall && overlaps(r.start_time,r.end_time,p.start_time,p.end_time));
     if(conflict && !confirm('Conflito de horário no mesmo salão. Salvar assim mesmo?')) return;
 
-    await setDoc(doc(festasCol, p.id), p);
-    dialog.close(); await reloadAll(); toast('Festa salva.');
+    try{
+      await setDoc(doc(festasCol, p.id), p);
+      dialog.close(); await reloadAll(); toast('Festa salva.');
+    }catch(err){
+      console.error(err); showErr('Erro ao salvar: ' + (err.code || err.message));
+    }
   }
 
   async function del(id){
     if(!confirm('Confirmar exclusão?')) return;
-    await deleteDoc(doc(festasCol, id));
-    await reloadAll(); toast('Festa removida.');
+    try{
+      await deleteDoc(doc(festasCol, id));
+      await reloadAll(); toast('Festa removida.');
+    }catch(err){
+      console.error(err); showErr('Erro ao excluir: ' + (err.code || err.message));
+    }
   }
 
   function duplicate(id){
     const src=getAll().find(x=>x.id===id); if(!src)return;
     const copy={...src, id: crypto.randomUUID()};
-    setDoc(doc(festasCol, copy.id), copy).then(reloadAll).then(()=>toast('Festa duplicada.'));
+    setDoc(doc(festasCol, copy.id), copy)
+      .then(reloadAll)
+      .then(()=>toast('Festa duplicada.'))
+      .catch(err=>{ console.error(err); showErr('Erro ao duplicar: ' + (err.code || err.message)); });
   }
 
   function downloadICS(id){
@@ -206,7 +223,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       `UID:${p.id}@vivendas`,`DTSTART:${dt(p.date,p.start_time)}`,`DTEND:${dt(p.date,p.end_time||p.start_time)}`,
       `SUMMARY:Festa - ${p.resident_name} (${p.apartment})`,`LOCATION:${p.hall}`,
       `DESCRIPTION:Materiais: ${mats(p)}\\nConvidados:\\n${(p.guests_text||'').replace(/\\n/g,'; ')}`,
-      'END:VEVENT','END:VCALENDAR'].join('\\r\\n');
+      'END:VEVENT','END:VCALENDAR'].join('\r\n');
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); a.download=`festa-${p.date}.ics`; a.click(); URL.revokeObjectURL(a.href);
   }
 
@@ -218,7 +235,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
     $('#btn-new').addEventListener('click', openCreate);
     $('#fab-new').addEventListener('click', openCreate);
     $('#btn-export').addEventListener('click', ()=>{const rows=getAll(); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(rows,null,2)],{type:'application/json'})); a.download='festas.json'; a.click();});
-    $('#btn-export-csv').addEventListener('click', ()=>{const rows=getAll(); const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text']; const esc=s=>`"${String(s??'').replace(/"/g,'""')}"`; const csv=[h.join(',')].concat(rows.map(r=>h.map(k=>esc(r[k])).join(','))).join('\\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='festas.csv'; a.click();});
+    $('#btn-export-csv').addEventListener('click', ()=>{const rows=getAll(); const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text']; const esc=s=>`"${String(s??'').replace(/"/g,'""')}"`; const csv=[h.join(',')].concat(rows.map(r=>h.map(k=>esc(r[k])).join(','))).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='festas.csv'; a.click();});
     $('#party-form').addEventListener('submit', e=>e.preventDefault());
     $('#btn-save').addEventListener('click', saveParty);
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
@@ -227,7 +244,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
   // Auth
   function applyAuth(user){
     const logged=!!user;
-    loginSection.hidden=logged; appSection.hidden=!logged; navActions.hidden=!logged; $('#fab-new').hidden=!logged;
+    $('#login-section').hidden=logged; $('#app-section').hidden=!logged; $('#nav-actions').hidden=!logged; $('#fab-new').hidden=!logged;
     $('#current-user').textContent = logged ? user.email : '';
   }
   function initAuth(){
@@ -241,7 +258,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       const email=(fd.get('email')||'').toString().trim();
       const password=(fd.get('password')||'').toString();
       try{ await signInWithEmailAndPassword(auth, email, password); }
-      catch(err){ console.error(err); toast('Falha no login. Verifique e-mail/senha.'); }
+      catch(err){ console.error(err); showErr('Falha no login: ' + (err.code || err.message)); }
     });
     $('#btn-logout').addEventListener('click', ()=>signOut(auth));
   }
