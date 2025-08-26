@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivendas de La Salles — Festas</title>
 
-  <link rel="stylesheet" href="style.css?v=8">
-
-  <!-- Config do Firebase (só exporta o objeto) -->
-  <script defer src="config.js?v=8" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=8.2">
+  <!-- Config Firebase (exporta CONFIG) -->
+  <script defer src="config.js?v=8.2" type="module"></script>
 </head>
 <body>
   <header class="topbar">
@@ -120,16 +119,28 @@
 
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
     <div id="toast" class="toast" hidden aria-live="polite"></div>
+
+    <!-- Caixa de erros visível no celular -->
+    <div id="errbox" style="position:fixed;left:8px;right:8px;bottom:8px;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;border-radius:10px;padding:10px;display:none;z-index:99"></div>
   </main>
 
   <footer class="footer">
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
+  <!-- Captura erros globais (sem precisar de console) -->
+  <script>
+    (function(){
+      const show = (msg)=>{ const el=document.getElementById('errbox'); el.textContent=String(msg||''); el.style.display='block'; };
+      window.addEventListener('error', (e)=> show(e.message||e.error));
+      window.addEventListener('unhandledrejection', (e)=> show((e.reason&&e.reason.message)||e.reason||'Erro inesperado'));
+    })();
+  </script>
+
   <!-- Firebase SDKs (ES Modules via CDN) + App -->
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="app.js?v=8.2"></script>
 </body>
 </html>
