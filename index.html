@@ -5,12 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
+  <meta name="robots" content="noindex,nofollow" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0B74B8" />
-  <link rel="stylesheet" href="style.css?v=20" />
+
+  <!-- Performance -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="preload" href="style.css?v=22" as="style">
+  <link rel="modulepreload" href="app.js?v=22">
+  <link rel="stylesheet" href="style.css?v=22" />
+
+  <!-- Garante que [hidden] suma -->
   <style>[hidden]{display:none!important}</style>
-  <script defer src="config.js?v=20" type="module"></script>
+
+  <!-- Config do projeto (sua chave + salões) -->
+  <script defer src="config.js?v=22" type="module"></script>
 </head>
 <body>
   <header class="topbar" role="banner">
@@ -22,10 +33,6 @@
       <button id="btn-new" class="btn primary">Nova Festa</button>
       <button id="btn-export" class="btn ghost" aria-label="Exportar JSON">JSON</button>
       <button id="btn-export-csv" class="btn ghost" aria-label="Exportar CSV">CSV</button>
-      <div class="font-tools" aria-label="Tamanho do texto">
-        <button class="btn ghost" id="font-dec" aria-label="Diminuir fonte">A−</button>
-        <button class="btn ghost" id="font-inc" aria-label="Aumentar fonte">A+</button>
-      </div>
       <span id="current-user" class="user" aria-live="polite"></span>
       <button id="btn-logout" class="btn link" aria-label="Sair">Sair</button>
     </nav>
@@ -161,10 +168,14 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <!-- Firebase ES Modules (CDN) + App -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=20"></script>
+  <!-- App principal -->
+  <script type="module" src="app.js?v=22"></script>
+
+  <!-- (Opcional) Service Worker, se você criar o sw.js -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+  </script>
 </body>
 </html>
