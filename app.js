@@ -1,4 +1,4 @@
-// app.js v16 — Firebase (Auth + Firestore), UX/validação/ID anti-duplicata
+// app.js v17 — garante que botões só aparecem após login
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -19,13 +19,14 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   const byDateTime=(a,b)=> (a.date===b.date? (b.start_time||'').localeCompare(a.start_time||'') : (a.date>b.date?-1:1));
   const slug=(s)=> String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-_]/gi,'').toLowerCase();
 
+  // Firebase
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
   const festasCol = collection(db, 'festas');
 
+  // Estado/UI
   let CACHE = []; let loading = false;
-
   const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
   const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg'), loadingMsg=$('#loading-msg');
   const loginForm=$('#login-form'), btnLogin=$('#btn-login'), filtersForm=$('#filters');
@@ -37,6 +38,11 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   const kToday=$('#kpi-today'), kUpcoming=$('#kpi-upcoming'), kGuests=$('#kpi-guests');
 
   let state={filterDate:'', filterHall:'', editingId:null};
+
+  // Segurança extra: garante oculto no carregamento inicial
+  navActions.hidden = true;
+  fab.hidden = true;
+  appSection.hidden = true;
 
   function setLoading(flag){ loading=!!flag; loadingMsg.hidden=!loading; }
   async function reloadAll(){
@@ -61,7 +67,13 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       return true;
     }).sort(byDateTime);
   }
-  function render(){ const rows=filtered(getAll()); emptyMsg.hidden = rows.length>0 || loading; renderCards(rows); renderTable(rows); renderMetrics(getAll()); }
+  function render(){
+    const rows = filtered(getAll());
+    emptyMsg.hidden = rows.length>0 || loading;
+    renderCards(rows);
+    renderTable(rows);
+    renderMetrics(getAll());
+  }
   function renderMetrics(all){
     const today=fmtDate(new Date());
     kToday.textContent = all.filter(r=>r.date===today).length;
@@ -112,7 +124,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       </div></td></tr>`;
   }
   function renderTable(rows){
-    const tbody=$('#tbody-parties');
     tbody.innerHTML = rows.map(rowHTML).join('');
     $$('[data-act="edit"]',tbody).forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
     $$('[data-act="view"]',tbody).forEach(b=>b.addEventListener('click',()=>showView(b.dataset.id)));
@@ -148,12 +159,15 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   }
   function err(m){ showErr(m); return null; }
 
-  function composeId(p){
-    // ID único por combinação: data + salão + início (ex.: 2025-09-10_gourmet_1900)
-    return `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`;
-  }
+  function composeId(p){ return `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`; }
 
-  function openCreate(){ form.reset(); $('#party-form [name="date"]').value=fmtDate(new Date()); formHallSel.value=CONFIG.halls[0]||''; dialogTitle.textContent='Nova Festa'; $('#party-dialog').showModal(); }
+  function openCreate(){
+    form.reset();
+    $('#party-form [name="date"]').value=fmtDate(new Date());
+    formHallSel.value=CONFIG.halls[0]||'';
+    dialogTitle.textContent='Nova Festa';
+    $('#party-dialog').showModal();
+  }
   function fill(p,id){
     form.dataset.editId = id || '';
     $('#party-form [name="date"]').value=p.date||'';
@@ -174,7 +188,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   function showView(id){
     const p=getAll().find(x=>x.id===id); if(!p)return;
     const nl=(s)=>String(s||'').replace(/\n/g,'<br>');
-    $('#view-content').innerHTML=`
+    viewContent.innerHTML=`
       <div class="view-line"><strong>Data</strong><span>${p.date}</span></div>
       <div class="view-line"><strong>Início</strong><span>${p.start_time||''}</span></div>
       <div class="view-line"><strong>Término</strong><span>${p.end_time||''}</span></div>
@@ -192,15 +206,19 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     const isEdit = !!form.dataset.editId;
     const id = isEdit ? form.dataset.editId : composeId(p);
     try{
-      $('#btn-save').disabled=true; $('#btn-save').textContent = isEdit ? 'Salvando…' : 'Criando…';
+      btnSave.disabled=true; btnSave.textContent = isEdit ? 'Salvando…' : 'Criando…';
       if(!isEdit){
         const exists = await getDoc(doc(festasCol, id));
-        if(exists.exists()){ showErr('Já existe uma festa para este salão, data e horário.'); $('#btn-save').disabled=false; $('#btn-save').textContent='Salvar'; return; }
+        if(exists.exists()){
+          showErr('Já existe uma festa para este salão, data e horário.');
+          btnSave.disabled=false; btnSave.textContent='Salvar';
+          return;
+        }
       }
       await setDoc(doc(festasCol, id), p);
       $('#party-dialog').close(); await reloadAll(); toast(isEdit?'Festa atualizada.':'Festa criada.');
     }catch(err){ console.error(err); showErr('Erro ao salvar: ' + humanizeFirebaseError(err)); }
-    finally{ $('#btn-save').disabled=false; $('#btn-save').textContent='Salvar'; }
+    finally{ btnSave.disabled=false; btnSave.textContent='Salvar'; }
   }
 
   async function del(id){
@@ -235,33 +253,41 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     });
     $('#btn-clear-filters').addEventListener('click', ()=>{ $('#filters').reset(); state.filterDate=''; state.filterHall=''; render(); });
 
-    $('#btn-new').addEventListener('click', openCreate);
-    $('#fab-new').addEventListener('click', openCreate);
+    btnNew.addEventListener('click', openCreate);
+    fab.addEventListener('click', openCreate);
 
-    $('#btn-export').addEventListener('click', ()=>{
+    btnExport.addEventListener('click', ()=>{
       const rows=getAll(); const a=document.createElement('a');
       a.href=URL.createObjectURL(new Blob([JSON.stringify(rows,null,2)],{type:'application/json'}));
       a.download='festas.json'; a.click();
     });
-    $('#btn-export-csv').addEventListener('click', ()=>{
-      const rows=getAll(); const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text'];
+    btnCSV.addEventListener('click', ()=>{
+      const rows=getAll();
+      const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text'];
       const esc=s=>`"${String(s??'').replace(/"/g,'""')}"`;
       const csv=[h.join(',')].concat(rows.map(r=>h.map(k=>esc(r[k])).join(','))).join('\n');
-      const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='festas.csv'; a.click();
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+      a.download='festas.csv'; a.click();
     });
 
     form.addEventListener('submit', e=>e.preventDefault());
-    $('#btn-save').addEventListener('click', saveParty);
+    btnSave.addEventListener('click', saveParty);
     $('#btn-cancel').addEventListener('click', ()=>$('#party-dialog').close());
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
+  // Controle de visibilidade por autenticação
   function applyAuth(user){
-    const logged=!!user;
-    loginSection.hidden=logged; appSection.hidden=!logged; navActions.hidden=!logged; fab.hidden=!logged;
+    const logged = !!user;
+    loginSection.hidden = logged;
+    appSection.hidden = !logged;
+    navActions.hidden = !logged;
+    fab.hidden = !logged;
     currentUser.textContent = logged ? user.email : '';
-    if(logged){ hideErr(); }
+    if (logged) hideErr();
   }
+
   function initAuth(){
     onAuthStateChanged(auth, async (user)=>{
       applyAuth(user);
@@ -272,9 +298,14 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       const fd=new FormData(e.target);
       const email=(fd.get('email')||'').toString().trim();
       const password=(fd.get('password')||'').toString();
-      try{ btnLogin.disabled=true; btnLogin.textContent='Entrando…'; await signInWithEmailAndPassword(auth, email, password); }
-      catch(err){ console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err)); }
-      finally{ btnLogin.disabled=false; btnLogin.textContent='Entrar'; }
+      try{
+        btnLogin.disabled=true; btnLogin.textContent='Entrando…';
+        await signInWithEmailAndPassword(auth, email, password);
+      }catch(err){
+        console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err));
+      }finally{
+        btnLogin.disabled=false; btnLogin.textContent='Entrar';
+      }
     });
     btnLogout.addEventListener('click', ()=>signOut(auth));
   }
@@ -293,5 +324,9 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     return err?.message || 'Erro inesperado';
   }
 
-  window.addEventListener('DOMContentLoaded', ()=>{ buildHallSelects(); bindUI(); initAuth(); });
+  window.addEventListener('DOMContentLoaded', ()=>{
+    // Garante estado inicial fechado
+    navActions.hidden = true; fab.hidden = true; appSection.hidden = true;
+    buildHallSelects(); bindUI(); initAuth();
+  });
 })();
