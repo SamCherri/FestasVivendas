@@ -1,61 +1,75 @@
-// app.js v8.2 - Firebase (Auth + Firestore) — site estático (GitHub Pages)
+// app.js v12 — Firebase (Auth + Firestore) — melhorias de UX/validação/ID determinístico
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
+import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 (function(){
   'use strict';
-  // Helpers UI
   const $=(s,el=document)=>el.querySelector(s);
   const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
-  const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,1800);};
-  const showErr=(m)=>{const el=$('#errbox'); if(!el) return; el.textContent=String(m||'Erro'); el.style.display='block';};
+  const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,2000);};
+  const showErr=(m)=>{const el=$('#errbox'); if(!el) return; el.textContent=String(m||'Erro'); el.hidden=false;};
+  const hideErr=()=>{const el=$('#errbox'); if(el) el.hidden=true;};
   const fmtDate=(d)=>{try{if(typeof d==='string')return d;return d.toISOString().slice(0,10);}catch{return '';}};
   const parseTime=(str)=>{if(!str)return null;const [h,m]=str.split(':').map(Number);return h*60+m;};
-  const overlaps=(a1,a2,b1,b2)=>{const A1=parseTime(a1)??-1,A2=parseTime(a2)??parseTime(a1),B1=parseTime(b1)??-1,B2=parseTime(b2)??parseTime(b1);return !(A2<=B1||B2<=A1);};
   const mats=(r)=>`copos ${r.cups||0}, garfos ${r.forks||0}, facas ${r.knives||0}, colheres ${r.spoons||0}, pratos ${r.plates||0}`;
   const byDateTime=(a,b)=> (a.date===b.date? (b.start_time||'').localeCompare(a.start_time||'') : (a.date>b.date?-1:1));
+  const slug=(s)=> String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-_]/gi,'').toLowerCase();
 
-  // Firebase init
+  // Firebase
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
   const festasCol = collection(db, 'festas');
 
-  // Cache
+  // Estado
   let CACHE = [];
+  let loading = false;
+
+  // DOM
+  const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
+  const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg'), loadingMsg=$('#loading-msg');
+  const loginForm=$('#login-form'), btnLogin=$('#btn-login'), filtersForm=$('#filters');
+  const btnNew=$('#btn-new'), btnExport=$('#btn-export'), btnCSV=$('#btn-export-csv'), btnLogout=$('#btn-logout');
+  const dialog=$('#party-dialog'), form=$('#party-form'), dialogTitle=$('#dialog-title'), btnSave=$('#btn-save'), btnCancel=$('#btn-cancel');
+  const viewDialog=$('#view-dialog'), viewContent=$('#view-content'), btnCloseView=$('#btn-close-view');
+  const filterHallSel=filtersForm.querySelector('select[name="hall"]');
+  const formHallSel=form.querySelector('select[name="hall"]');
+  const kToday=$('#kpi-today'), kUpcoming=$('#kpi-upcoming'), kGuests=$('#kpi-guests');
+
+  let state={filterDate:'', filterHall:'', editingId:null};
+
+  function setLoading(flag){
+    loading = !!flag;
+    loadingMsg.hidden = !loading;
+  }
+
   async function reloadAll(){
+    setLoading(true); hideErr();
     try{
       const snap = await getDocs(festasCol);
       CACHE = snap.docs.map(d => ({ id:d.id, ...d.data() }));
       render();
     }catch(err){
-      console.error(err); showErr('Falha ao carregar dados: ' + (err.code || err.message));
+      console.error(err);
+      showErr('Falha ao carregar dados: ' + humanizeFirebaseError(err));
+    }finally{
+      setLoading(false);
     }
   }
+
   const getAll = ()=> CACHE.slice();
 
-  // Elements
-  const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
-  const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg');
-  const loginForm=$('#login-form'), filtersForm=$('#filters');
-  const btnClear=$('#btn-clear-filters'), btnNew=$('#btn-new'), btnExport=$('#btn-export'), btnCSV=$('#btn-export-csv'), btnLogout=$('#btn-logout');
-  const dialog=$('#party-dialog'), form=$('#party-form'), dialogTitle=$('#dialog-title');
-  const viewDialog=$('#view-dialog'), viewContent=$('#view-content'), btnCloseView=$('#btn-close-view');
-  const filterHallSel=filtersForm.querySelector('select[name="hall"]');
-  const formHallSel=form.querySelector('select[name="hall"]');
-
-  const kToday=$('#kpi-today'), kUpcoming=$('#kpi-upcoming'), kGuests=$('#kpi-guests');
-  let state={filterDate:'', filterHall:'', editingId:null};
-
+  // Halls
   function buildHallSelects(){
     filterHallSel.innerHTML = '<option value="">Todos</option>' + CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
     formHallSel.innerHTML   = CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
   }
 
+  // Filtros
   function filtered(rows){
     return rows.filter(r=>{
       if(state.filterDate && r.date!==state.filterDate) return false;
@@ -66,10 +80,11 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
 
   function render(){
     const rows=filtered(getAll());
-    emptyMsg.hidden = rows.length>0;
+    emptyMsg.hidden = rows.length>0 || loading;
     renderCards(rows); renderTable(rows); renderMetrics(getAll());
   }
 
+  // KPIs
   function renderMetrics(all){
     const today=fmtDate(new Date());
     kToday.textContent = all.filter(r=>r.date===today).length;
@@ -78,20 +93,21 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
     kGuests.textContent = all.reduce((s,r)=> s + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
   }
 
+  // Cards
   function cardHTML(r){
     const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`].map(x=>`<span class="chip">${x}</span>`).join('');
     return `
       <article class="party-card" data-id="${r.id}">
         <div class="party-head"><strong>${r.date} • ${r.start_time||''}${r.end_time?'–'+r.end_time:''}</strong><span class="badge">${r.hall}</span></div>
-        <div class="kv"><span>Apto</span><span>${r.apartment}</span></div>
-        <div class="kv"><span>Morador</span><span>${r.resident_name}</span></div>
+        <div class="kv"><span>Apto</span><span>${escapeHTML(r.apartment)}</span></div>
+        <div class="kv"><span>Morador</span><span>${escapeHTML(r.resident_name)}</span></div>
         <div class="mats">${chips}</div>
         <div class="row-actions">
-          <button class="btn" data-act="edit">Editar</button>
-          <button class="btn" data-act="view">Ver</button>
-          <button class="btn" data-act="dup">Duplicar</button>
-          <button class="btn" data-act="ics">ICS</button>
-          <button class="btn danger" data-act="del">Excluir</button>
+          <button class="btn" data-act="edit" aria-label="Editar">Editar</button>
+          <button class="btn" data-act="view" aria-label="Ver detalhes">Ver</button>
+          <button class="btn" data-act="dup"  aria-label="Duplicar">Duplicar</button>
+          <button class="btn" data-act="ics"  aria-label="Baixar ICS">ICS</button>
+          <button class="btn danger" data-act="del" aria-label="Excluir">Excluir</button>
         </div>
       </article>`;
   }
@@ -107,10 +123,11 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
     });
   }
 
+  // Tabela
   function rowHTML(r){
     return `<tr>
       <td>${r.date}</td><td>${r.start_time||''}</td><td>${r.end_time||''}</td>
-      <td>${r.hall}</td><td>${r.apartment}</td><td>${r.resident_name}</td>
+      <td>${r.hall}</td><td>${escapeHTML(r.apartment)}</td><td>${escapeHTML(r.resident_name)}</td>
       <td>${mats(r)}</td>
       <td><div class="row-actions">
           <button class="btn" data-act="edit" data-id="${r.id}">Editar</button>
@@ -121,7 +138,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       </div></td></tr>`;
   }
   function renderTable(rows){
-    const tbody=$('#tbody-parties');
     tbody.innerHTML = rows.map(rowHTML).join('');
     $$('[data-act="edit"]',tbody).forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
     $$('[data-act="view"]',tbody).forEach(b=>b.addEventListener('click',()=>showView(b.dataset.id)));
@@ -130,10 +146,10 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
     $$('[data-act="del"]',tbody).forEach(b=>b.addEventListener('click',()=>del(b.dataset.id)));
   }
 
+  // Formulário
   function getForm(){
     const fd=new FormData(form);
     const o={
-      id: form.dataset.editId || crypto.randomUUID(),
       date: (fd.get('date')||'').toString(),
       start_time: (fd.get('start_time')||'').toString(),
       end_time: (fd.get('end_time')||'').toString(),
@@ -143,18 +159,37 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       knives: Number(fd.get('knives')||0),
       spoons: Number(fd.get('spoons')||0),
       plates: Number(fd.get('plates')||0),
-      apartment: (fd.get('apartment')||'').toString(),
-      resident_name: (fd.get('resident_name')||'').toString(),
+      apartment: (fd.get('apartment')||'').toString().trim(),
+      resident_name: (fd.get('resident_name')||'').toString().trim(),
       guests_text: (fd.get('guests_text')||'').toString()
     };
-    if(!o.date || !o.start_time || !o.hall || !o.apartment || !o.resident_name){ toast('Preencha os campos obrigatórios.'); return null; }
-    if(o.end_time && parseTime(o.end_time)<=parseTime(o.start_time)){ toast('Término deve ser depois do início.'); return null; }
+    // Validações
+    if(!o.date){ return err('Informe a data.'); }
+    if(!o.start_time){ return err('Informe o horário de início.'); }
+    if(!o.hall){ return err('Informe o salão.'); }
+    if(!o.apartment){ return err('Informe o apartamento.'); }
+    if(!o.resident_name){ return err('Informe o nome do morador.'); }
+    if(o.end_time && parseTime(o.end_time)<=parseTime(o.start_time)){ return err('Término deve ser após o início.'); }
+    ['cups','forks','knives','spoons','plates'].forEach(k=>{ if(o[k]<0||Number.isNaN(o[k])) o[k]=0; });
     return o;
   }
+  function err(m){ showErr(m); return null; }
 
-  function openCreate(){ form.reset(); form.dataset.editId=''; $('#party-form [name="date"]').value=fmtDate(new Date()); $('#dialog-title').textContent='Nova Festa'; dialog.showModal(); }
-  function fill(p){
-    form.dataset.editId = p.id || '';
+  function composeId(p){
+    // ID único: data_hall_inicio (ex: 2025-09-10_gourmet_1900)
+    const key = `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`;
+    return key;
+  }
+
+  function openCreate(){
+    form.reset();
+    $('#party-form [name="date"]').value=fmtDate(new Date());
+    formHallSel.value=CONFIG.halls[0]||'';
+    dialogTitle.textContent='Nova Festa';
+    dialog.showModal();
+  }
+  function fill(p,id){
+    form.dataset.editId = id || '';
     $('#party-form [name="date"]').value=p.date||'';
     $('#party-form [name="start_time"]').value=p.start_time||'';
     $('#party-form [name="end_time"]').value=p.end_time||'';
@@ -168,7 +203,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
     $('#party-form [name="resident_name"]').value=p.resident_name||'';
     $('#party-form [name="guests_text"]').value=p.guests_text||'';
   }
-  function openEdit(id){ const p=getAll().find(x=>x.id===id); if(!p)return; $('#dialog-title').textContent='Editar Festa'; fill(p); dialog.showModal(); }
+  function openEdit(id){ const p=getAll().find(x=>x.id===id); if(!p)return; dialogTitle.textContent='Editar Festa'; fill(p,id); dialog.showModal(); }
+
   function showView(id){
     const p=getAll().find(x=>x.id===id); if(!p)return;
     viewContent.innerHTML=`
@@ -176,24 +212,35 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       <div class="view-line"><strong>Início</strong><span>${p.start_time||''}</span></div>
       <div class="view-line"><strong>Término</strong><span>${p.end_time||''}</span></div>
       <div class="view-line"><strong>Salão</strong><span>${p.hall}</span></div>
-      <div class="view-line"><strong>Apto</strong><span>${p.apartment}</span></div>
-      <div class="view-line"><strong>Morador</strong><span>${p.resident_name}</span></div>
+      <div class="view-line"><strong>Apto</strong><span>${escapeHTML(p.apartment)}</span></div>
+      <div class="view-line"><strong>Morador</strong><span>${escapeHTML(p.resident_name)}</span></div>
       <div class="view-line"><strong>Materiais</strong><span>${mats(p)}</span></div>
       <div class="view-line"><strong>Convidados</strong><span>${(p.guests_text||'').replace(/\n/g,'<br>')||'(não informado)'}</span></div>`;
     viewDialog.showModal();
   }
 
   async function saveParty(){
+    hideErr();
     const p=getForm(); if(!p) return;
-    const rows=getAll();
-    const conflict = rows.some(r => r.id!==p.id && r.date===p.date && r.hall===p.hall && overlaps(r.start_time,r.end_time,p.start_time,p.end_time));
-    if(conflict && !confirm('Conflito de horário no mesmo salão. Salvar assim mesmo?')) return;
+    const isEdit = !!form.dataset.editId;
+    const id = isEdit ? form.dataset.editId : composeId(p);
 
+    // Antiduplicata: se novo e ID já existe, avisa
     try{
-      await setDoc(doc(festasCol, p.id), p);
-      dialog.close(); await reloadAll(); toast('Festa salva.');
+      btnSave.disabled = true; btnSave.textContent = isEdit ? 'Salvando…' : 'Criando…';
+      if(!isEdit){
+        const exists = await getDoc(doc(festasCol, id));
+        if(exists.exists()){
+          showErr('Já existe uma festa para este salão, data e horário. Altere o horário ou o salão.');
+          btnSave.disabled=false; btnSave.textContent='Salvar'; return;
+        }
+      }
+      await setDoc(doc(festasCol, id), p);
+      dialog.close(); await reloadAll(); toast(isEdit?'Festa atualizada.':'Festa criada.');
     }catch(err){
-      console.error(err); showErr('Erro ao salvar: ' + (err.code || err.message));
+      console.error(err); showErr('Erro ao salvar: ' + humanizeFirebaseError(err));
+    }finally{
+      btnSave.disabled=false; btnSave.textContent='Salvar';
     }
   }
 
@@ -203,24 +250,30 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
       await deleteDoc(doc(festasCol, id));
       await reloadAll(); toast('Festa removida.');
     }catch(err){
-      console.error(err); showErr('Erro ao excluir: ' + (err.code || err.message));
+      console.error(err); showErr('Erro ao excluir: ' + humanizeFirebaseError(err));
     }
   }
 
   function duplicate(id){
     const src=getAll().find(x=>x.id===id); if(!src)return;
-    const copy={...src, id: crypto.randomUUID()};
-    setDoc(doc(festasCol, copy.id), copy)
+    const copy={...src};
+    // Sugerir novo horário (se houver) + novo ID
+    const baseStart = parseTime(copy.start_time)||0;
+    const h = String(Math.floor(baseStart/60)).padStart(2,'0');
+    const m = String(baseStart%60).padStart(2,'0');
+    copy.start_time = `${h}:${m}`;
+    const newId = composeId(copy);
+    setDoc(doc(festasCol, newId), copy)
       .then(reloadAll)
       .then(()=>toast('Festa duplicada.'))
-      .catch(err=>{ console.error(err); showErr('Erro ao duplicar: ' + (err.code || err.message)); });
+      .catch(err=>{ console.error(err); showErr('Erro ao duplicar: ' + humanizeFirebaseError(err)); });
   }
 
   function downloadICS(id){
     const p=getAll().find(x=>x.id===id); if(!p)return;
     const dt=(d,t)=>`${d.replace(/-/g,'')}`+(t?`T${t.replace(':','')}00`:'');
     const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Vivendas//Festas//PT-BR','BEGIN:VEVENT',
-      `UID:${p.id}@vivendas`,`DTSTART:${dt(p.date,p.start_time)}`,`DTEND:${dt(p.date,p.end_time||p.start_time)}`,
+      `UID:${id}@vivendas`,`DTSTART:${dt(p.date,p.start_time)}`,`DTEND:${dt(p.date,p.end_time||p.start_time)}`,
       `SUMMARY:Festa - ${p.resident_name} (${p.apartment})`,`LOCATION:${p.hall}`,
       `DESCRIPTION:Materiais: ${mats(p)}\\nConvidados:\\n${(p.guests_text||'').replace(/\\n/g,'; ')}`,
       'END:VEVENT','END:VCALENDAR'].join('\r\n');
@@ -229,38 +282,82 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc }
 
   // Filtros e binds
   function bindUI(){
-    buildHallSelects();
-    $('#filters').addEventListener('submit', e=>{e.preventDefault(); const fd=new FormData(e.target); state.filterDate=(fd.get('date')||'').toString(); state.filterHall=(fd.get('hall')||'').toString(); render();});
+    $('#filters').addEventListener('submit', e=>{
+      e.preventDefault(); hideErr();
+      const fd=new FormData(e.target);
+      state.filterDate=(fd.get('date')||'').toString();
+      state.filterHall=(fd.get('hall')||'').toString();
+      render();
+    });
     $('#btn-clear-filters').addEventListener('click', ()=>{ $('#filters').reset(); state.filterDate=''; state.filterHall=''; render(); });
-    $('#btn-new').addEventListener('click', openCreate);
-    $('#fab-new').addEventListener('click', openCreate);
-    $('#btn-export').addEventListener('click', ()=>{const rows=getAll(); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(rows,null,2)],{type:'application/json'})); a.download='festas.json'; a.click();});
-    $('#btn-export-csv').addEventListener('click', ()=>{const rows=getAll(); const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text']; const esc=s=>`"${String(s??'').replace(/"/g,'""')}"`; const csv=[h.join(',')].concat(rows.map(r=>h.map(k=>esc(r[k])).join(','))).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='festas.csv'; a.click();});
-    $('#party-form').addEventListener('submit', e=>e.preventDefault());
-    $('#btn-save').addEventListener('click', saveParty);
-    $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
+
+    btnNew.addEventListener('click', openCreate);
+    fab.addEventListener('click', openCreate);
+
+    btnExport.addEventListener('click', ()=>{
+      const rows=getAll();
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([JSON.stringify(rows,null,2)],{type:'application/json'}));
+      a.download='festas.json'; a.click();
+    });
+    btnCSV.addEventListener('click', ()=>{
+      const rows=getAll();
+      const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text'];
+      const esc=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+      const csv=[h.join(',')].concat(rows.map(r=>h.map(k=>esc(r[k])).join(','))).join('\n');
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+      a.download='festas.csv'; a.click();
+    });
+
+    form.addEventListener('submit', e=>e.preventDefault());
+    btnSave.addEventListener('click', saveParty);
+    btnCancel.addEventListener('click', ()=>dialog.close());
+    btnCloseView.addEventListener('click', ()=>viewDialog.close());
   }
 
   // Auth
   function applyAuth(user){
     const logged=!!user;
-    $('#login-section').hidden=logged; $('#app-section').hidden=!logged; $('#nav-actions').hidden=!logged; $('#fab-new').hidden=!logged;
-    $('#current-user').textContent = logged ? user.email : '';
+    loginSection.hidden=logged; appSection.hidden=!logged; navActions.hidden=!logged; fab.hidden=!logged;
+    currentUser.textContent = logged ? user.email : '';
+    if(logged){ hideErr(); }
   }
   function initAuth(){
     onAuthStateChanged(auth, async (user)=>{
       applyAuth(user);
       if(user){ await reloadAll(); toast('Login efetuado.'); }
     });
-    $('#login-form').addEventListener('submit', async (e)=>{
-      e.preventDefault();
+    loginForm.addEventListener('submit', async (e)=>{
+      e.preventDefault(); hideErr();
       const fd=new FormData(e.target);
       const email=(fd.get('email')||'').toString().trim();
       const password=(fd.get('password')||'').toString();
-      try{ await signInWithEmailAndPassword(auth, email, password); }
-      catch(err){ console.error(err); showErr('Falha no login: ' + (err.code || err.message)); }
+      try{
+        btnLogin.disabled=true; btnLogin.textContent='Entrando…';
+        await signInWithEmailAndPassword(auth, email, password);
+      }catch(err){
+        console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err));
+      }finally{
+        btnLogin.disabled=false; btnLogin.textContent='Entrar';
+      }
     });
-    $('#btn-logout').addEventListener('click', ()=>signOut(auth));
+    btnLogout.addEventListener('click', ()=>signOut(auth));
+  }
+
+  // Utils
+  function escapeHTML(s){ return String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function humanizeFirebaseError(err){
+    const code = String(err?.code||'').toLowerCase();
+    if(code.includes('permission-denied')) return 'Sem permissão. Faça login.';
+    if(code.includes('unauthenticated')) return 'Você precisa estar logado.';
+    if(code.includes('failed-precondition')) return 'Condição inválida. Verifique suas regras do Firestore.';
+    if(code.includes('unavailable')) return 'Serviço temporariamente indisponível. Tente novamente.';
+    if(code.includes('not-found')) return 'Registro não encontrado.';
+    if(code.includes('already-exists')) return 'Já existe um registro igual.';
+    if(code.includes('invalid-argument')) return 'Dados inválidos. Revise os campos.';
+    if(code.includes('deadline-exceeded')) return 'Tempo excedido. Verifique sua conexão.';
+    return err?.message || 'Erro inesperado';
   }
 
   // Boot
