@@ -13,15 +13,12 @@
   <!-- Performance -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-  <link rel="preload" href="style.css?v=22" as="style">
-  <link rel="modulepreload" href="app.js?v=22">
-  <link rel="stylesheet" href="style.css?v=22" />
+  <link rel="preload" href="style.css?v=26" as="style">
+  <link rel="modulepreload" href="app.js?v=26">
+  <link rel="stylesheet" href="style.css?v=26" />
 
-  <!-- Garante que [hidden] suma -->
   <style>[hidden]{display:none!important}</style>
-
-  <!-- Config do projeto (sua chave + salões) -->
-  <script defer src="config.js?v=22" type="module"></script>
+  <script defer src="config.js?v=26" type="module"></script>
 </head>
 <body>
   <header class="topbar" role="banner">
@@ -54,7 +51,8 @@
         <label>Senha
           <input type="password" name="password" required autocomplete="current-password" minlength="6" placeholder="••••••••">
         </label>
-        <button class="btn primary" type="submit" id="btn-login">Entrar</button>
+        <!-- IMPORTANTE: type="button" pra não recarregar a página -->
+        <button class="btn primary" type="button" id="btn-login">Entrar</button>
       </form>
       <p class="muted tiny">Problemas de acesso? Contate a administração.</p>
     </section>
@@ -69,7 +67,7 @@
         <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
 
-      <!-- CALENDÁRIO MENSAL -->
+      <!-- CALENDÁRIO -->
       <section class="card calendar" role="region" aria-label="Calendário mensal">
         <header class="cal-header">
           <button id="cal-prev" class="btn" aria-label="Mês anterior">◀</button>
@@ -113,7 +111,6 @@
       </div>
     </section>
 
-    <!-- DIALOG: CADASTRO/EDIÇÃO -->
     <dialog id="party-dialog" aria-labelledby="dialog-title">
       <form method="dialog" id="party-form" class="form" novalidate>
         <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
@@ -147,7 +144,6 @@
       </form>
     </dialog>
 
-    <!-- DIALOG: VISUALIZAÇÃO -->
     <dialog id="view-dialog" aria-labelledby="view-title">
       <article class="view-card">
         <header class="dialog-header"><h3 id="view-title">Detalhes da festa</h3></header>
@@ -168,14 +164,6 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <!-- App principal -->
-  <script type="module" src="app.js?v=22"></script>
-
-  <!-- (Opcional) Service Worker, se você criar o sw.js -->
-  <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
-  </script>
+  <script type="module" src="app.js?v=26"></script>
 </body>
 </html>
