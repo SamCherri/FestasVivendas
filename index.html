@@ -4,68 +4,79 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivendas de La Salles — Festas</title>
+  <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salles. Acesso restrito.">
+  <link rel="icon" href="favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1976d2">
 
-  <link rel="stylesheet" href="style.css?v=8.2">
-  <!-- Config Firebase (exporta CONFIG) -->
-  <script defer src="config.js?v=8.2" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=12">
+  <script defer src="config.js?v=12" type="module"></script>
 </head>
 <body>
-  <header class="topbar">
+  <header class="topbar" role="banner">
     <div class="brand">
-      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/></svg>
+      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/></svg>
       <span>Vivendas de La Salles — Festas</span>
     </div>
-    <nav id="nav-actions" hidden class="actions">
+    <nav id="nav-actions" hidden class="actions" aria-label="Ações principais">
       <button id="btn-new" class="btn primary">Nova Festa</button>
-      <button id="btn-export" class="btn ghost">JSON</button>
-      <button id="btn-export-csv" class="btn ghost">CSV</button>
-      <span id="current-user" class="user"></span>
-      <button id="btn-logout" class="btn link">Sair</button>
+      <button id="btn-export" class="btn ghost" aria-label="Exportar JSON">JSON</button>
+      <button id="btn-export-csv" class="btn ghost" aria-label="Exportar CSV">CSV</button>
+      <span id="current-user" class="user" aria-live="polite"></span>
+      <button id="btn-logout" class="btn link" aria-label="Sair">Sair</button>
     </nav>
   </header>
 
-  <main class="container">
+  <main class="container" role="main">
     <!-- LOGIN -->
-    <section id="login-section" class="card max-480 center-v">
-      <h1>Acesso interno</h1>
+    <section id="login-section" class="card max-480 center-v" aria-labelledby="login-title">
+      <h1 id="login-title">Acesso interno</h1>
       <p class="muted">Entre com e-mail e senha cadastrados no Firebase.</p>
-      <form id="login-form" class="form">
-        <label>E-mail <input name="email" type="email" required autocomplete="username"></label>
-        <label>Senha <input type="password" name="password" required autocomplete="current-password"></label>
-        <button class="btn primary" type="submit">Entrar</button>
+      <form id="login-form" class="form" novalidate>
+        <label>E-mail
+          <input name="email" type="email" required autocomplete="username" inputmode="email" placeholder="ex: zelador@vivendas.com">
+        </label>
+        <label>Senha
+          <input type="password" name="password" required autocomplete="current-password" minlength="6" placeholder="••••••••">
+        </label>
+        <button class="btn primary" type="submit" id="btn-login">Entrar</button>
       </form>
+      <p class="muted tiny">Problemas de acesso? Contate a administração.</p>
     </section>
 
     <!-- APP -->
-    <section id="app-section" hidden>
-      <section class="metrics">
+    <section id="app-section" hidden aria-labelledby="app-title">
+      <h2 id="app-title" class="visually-hidden">Painel</h2>
+
+      <section class="metrics" aria-label="Indicadores">
         <div class="metric-card"><div class="metric-k">Hoje</div><div class="metric-v" id="kpi-today">0</div></div>
         <div class="metric-card"><div class="metric-k">Próx. 4 semanas</div><div class="metric-v" id="kpi-upcoming">0</div></div>
         <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
 
-      <div class="toolbar card">
+      <div class="toolbar card" role="region" aria-label="Filtros">
         <form id="filters" class="filters">
-          <label>Data <input type="date" name="date"></label>
+          <label>Data <input type="date" name="date" aria-label="Filtrar por data"></label>
           <label>Salão
-            <select name="hall">
+            <select name="hall" aria-label="Filtrar por salão">
               <option value="">Todos</option>
             </select>
           </label>
-          <button type="submit" class="btn">Filtrar</button>
-          <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
+          <button type="submit" class="btn" aria-label="Aplicar filtros">Filtrar</button>
+          <button type="button" id="btn-clear-filters" class="btn link" aria-label="Limpar filtros">Limpar</button>
         </form>
       </div>
 
-      <div id="cards" class="cards"></div>
-      <p id="empty-msg" class="muted center" hidden>Sem registros.</p>
+      <div id="cards" class="cards" aria-live="polite"></div>
+      <p id="empty-msg" class="muted center" hidden>Nenhum registro.</p>
+      <p id="loading-msg" class="muted center">Carregando…</p>
 
-      <div class="card table-wrapper">
+      <div class="card table-wrapper" role="region" aria-label="Tabela de festas">
         <table class="table" aria-label="Festas">
           <thead>
             <tr>
-              <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
-              <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
+              <th scope="col">Data</th><th scope="col">Início</th><th scope="col">Término</th><th scope="col">Salão</th>
+              <th scope="col">Apto</th><th scope="col">Morador</th><th scope="col">Materiais</th><th scope="col">Ações</th>
             </tr>
           </thead>
           <tbody id="tbody-parties"></tbody>
@@ -74,9 +85,9 @@
     </section>
 
     <!-- MODAL -->
-    <dialog id="party-dialog">
-      <form method="dialog" id="party-form" class="form">
-        <header class="dialog-header"><h2 id="dialog-title">Nova Festa</h2></header>
+    <dialog id="party-dialog" aria-labelledby="dialog-title">
+      <form method="dialog" id="party-form" class="form" novalidate>
+        <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
         <div class="grid two">
           <label>Data <input type="date" name="date" required></label>
           <label>Salão <select name="hall" required></select></label>
@@ -86,30 +97,30 @@
         <fieldset class="materials">
           <legend>Materiais</legend>
           <div class="grid five">
-            <label>Copos <input type="number" name="cups" min="0" value="0"></label>
-            <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
-            <label>Facas <input type="number" name="knives" min="0" value="0"></label>
-            <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
-            <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
+            <label>Copos <input type="number" name="cups" min="0" value="0" inputmode="numeric"></label>
+            <label>Garfos <input type="number" name="forks" min="0" value="0" inputmode="numeric"></label>
+            <label>Facas <input type="number" name="knives" min="0" value="0" inputmode="numeric"></label>
+            <label>Colheres <input type="number" name="spoons" min="0" value="0" inputmode="numeric"></label>
+            <label>Pratos <input type="number" name="plates" min="0" value="0" inputmode="numeric"></label>
           </div>
         </fieldset>
         <div class="grid two">
-          <label>Apartamento <input type="text" name="apartment" required></label>
+          <label>Apartamento <input type="text" name="apartment" required placeholder="ex: Bloco B, 304"></label>
           <label>Morador <input type="text" name="resident_name" required></label>
         </div>
         <label>Lista de convidados (um por linha)
-          <textarea name="guests_text" rows="6"></textarea>
+          <textarea name="guests_text" rows="6" placeholder="Nome 1&#10;Nome 2&#10;..."></textarea>
         </label>
         <menu class="dialog-actions">
-          <button value="cancel" class="btn">Cancelar</button>
+          <button value="cancel" class="btn" id="btn-cancel">Cancelar</button>
           <button id="btn-save" value="default" class="btn primary">Salvar</button>
         </menu>
       </form>
     </dialog>
 
-    <dialog id="view-dialog">
+    <dialog id="view-dialog" aria-labelledby="view-title">
       <article class="view-card">
-        <header class="dialog-header"><h3>Detalhes da festa</h3></header>
+        <header class="dialog-header"><h3 id="view-title">Detalhes da festa</h3></header>
         <div id="view-content" class="view-content"></div>
         <menu class="dialog-actions">
           <button id="btn-close-view" class="btn">Fechar</button>
@@ -120,27 +131,27 @@
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
     <div id="toast" class="toast" hidden aria-live="polite"></div>
 
-    <!-- Caixa de erros visível no celular -->
-    <div id="errbox" style="position:fixed;left:8px;right:8px;bottom:8px;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;border-radius:10px;padding:10px;display:none;z-index:99"></div>
+    <!-- Caixa de erros (visível no celular) -->
+    <div id="errbox" class="errbox" hidden aria-live="assertive"></div>
   </main>
 
-  <footer class="footer">
+  <footer class="footer" role="contentinfo">
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <!-- Captura erros globais (sem precisar de console) -->
+  <!-- Captura erros globais -->
   <script>
     (function(){
-      const show = (msg)=>{ const el=document.getElementById('errbox'); el.textContent=String(msg||''); el.style.display='block'; };
+      const show = (msg)=>{ const el=document.getElementById('errbox'); el.textContent=String(msg||''); el.hidden=false; };
       window.addEventListener('error', (e)=> show(e.message||e.error));
       window.addEventListener('unhandledrejection', (e)=> show((e.reason&&e.reason.message)||e.reason||'Erro inesperado'));
     })();
   </script>
 
-  <!-- Firebase SDKs (ES Modules via CDN) + App -->
+  <!-- Firebase SDKs (ES Modules por CDN) + App -->
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=8.2"></script>
+  <script type="module" src="app.js?v=12"></script>
 </body>
 </html>
