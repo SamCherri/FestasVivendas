@@ -1,4 +1,4 @@
-// app.js v19 — Auth + Firestore + Calendário mensal + UX
+// app.js v19.1 — Auth + Firestore + Calendário mensal + UX + erros detalhados
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -40,7 +40,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   // Calendário
   const calGrid = $('#cal-grid'), calTitle = $('#cal-title');
   const calPrev = $('#cal-prev'), calNext = $('#cal-next');
-  let calCursor = new Date(); // mês atual
+  let calCursor = new Date();
 
   let state={filterDate:'', filterHall:'', editingId:null};
 
@@ -86,12 +86,12 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     kGuests.textContent = all.reduce((s,r)=> s + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
   }
 
-  // ===== Calendário (macro) =====
+  // ===== Calendário (macro)
   function monthInfo(d){
     const y=d.getFullYear(), m=d.getMonth();
     const first=new Date(y,m,1);
     const last=new Date(y,m+1,0);
-    const startDow = (first.getDay()+6)%7; // semana iniciando na segunda
+    const startDow = (first.getDay()+6)%7; // semana começando na segunda
     return { y, m, days:last.getDate(), startDow };
   }
   function fmtMonthTitle(d){
@@ -99,17 +99,15 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
             .replace(/^./, c=>c.toUpperCase());
   }
   function renderCalendar(){
-    const {y,m,days,startDow} = monthInfo(calCursor);
+    const {y,m,startDow} = monthInfo(calCursor);
     calTitle.textContent = fmtMonthTitle(calCursor);
     const todayStr = fmtDate(new Date());
-    // contagem de festas por dia
     const counts = getAll().reduce((acc,r)=>{ acc[r.date]=(acc[r.date]||0)+1; return acc; }, {});
-    // cabeçalho e células
     const dow = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
     calGrid.innerHTML = dow.map(d=>`<div class="cal-dow">${d}</div>`).join('');
     const cells = [];
     const prevDays = startDow;
-    const totalCells = 42; // 6 semanas
+    const totalCells = 42;
     const firstGridDate = new Date(y,m,1 - prevDays);
     for(let i=0;i<totalCells;i++){
       const d = new Date(firstGridDate); d.setDate(d.getDate()+i);
@@ -128,7 +126,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         </div>`);
     }
     calGrid.insertAdjacentHTML('beforeend', cells.join(''));
-    // clique = filtra; clique prolongado = cria
     let pressTimer=null;
     calGrid.querySelectorAll('.cal-hit').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -150,12 +147,11 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         pressTimer = setTimeout(()=>{ openCreateWithDate(date); }, 700);
       }, {passive:true});
     });
-
     calPrev.onclick = ()=>{ calCursor = new Date(y, m-1, 1); renderCalendar(); };
     calNext.onclick = ()=>{ calCursor = new Date(y, m+1, 1); renderCalendar(); };
   }
   function openCreateWithDate(dateStr){ openCreate(); $('#party-form [name="date"]').value = dateStr; }
-  // ===== fim calendário =====
+  // ===== fim calendário
 
   function cardHTML(r){
     const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`].map(x=>`<span class="chip">${x}</span>`).join('');
@@ -352,7 +348,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
-  // controle por autenticação
+  // autenticação
   function applyAuth(user){
     const logged = !!user;
     loginSection.hidden = logged;
@@ -377,7 +373,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         btnLogin.disabled=true; btnLogin.textContent='Entrando…';
         await signInWithEmailAndPassword(auth, email, password);
       }catch(err){
-        console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err));
+        console.error('AUTH ERROR =>', err);
+        showErr('Falha no login: ' + humanizeFirebaseError(err));
       }finally{
         btnLogin.disabled=false; btnLogin.textContent='Entrar';
       }
@@ -386,9 +383,30 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   }
 
   function escapeHTML(s){ return String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+  // >>> AQUI estava cortado no seu arquivo
   function humanizeFirebaseError(err){
     const code = String(err?.code||'').toLowerCase();
-    if(code.includes('permission-denied')) return 'Sem permissão. Faça login.';
-    if(code.includes('unauthenticated')) return 'Você precisa estar logado.';
-    if(code.includes('failed-precondition')) return 'Condição inválida. Verifique suas regras do Firestore.';
-    if(code.includes('unavailable')) return 'Serviço t
+    const base = `[${code||'sem-codigo'}] ${err?.message||'Erro inesperado'}`;
+    // Auth
+    if(code.includes('auth/invalid-credential')) return base + ' — E-mail ou senha inválidos.';
+    if(code.includes('auth/invalid-email'))      return base + ' — Formato de e-mail inválido.';
+    if(code.includes('auth/user-not-found'))     return base + ' — Usuário não encontrado neste projeto.';
+    if(code.includes('auth/wrong-password'))     return base + ' — Senha incorreta.';
+    if(code.includes('auth/operation-not-allowed')) return base + ' — Provider desabilitado (ative Email/Password em Sign-in method).';
+    if(code.includes('auth/domain-not-allowed')) return base + ' — Domínio do site não autorizado (adicione samcherri.github.io em Authorized domains).';
+    if(code.includes('auth/network-request-failed')) return base + ' — Falha de rede. Tente novamente.';
+    if(code.includes('auth/too-many-requests'))  return base + ' — Muitas tentativas. Aguarde alguns minutos.';
+    // Firestore
+    if(code.includes('permission-denied')) return base + ' — Sem permissão no Firestore (regras).';
+    if(code.includes('unauthenticated'))   return base + ' — É preciso estar logado.';
+    if(code.includes('failed-precondition')) return base + ' — Verifique as regras do Firestore.';
+    if(code.includes('unavailable'))       return base + ' — Serviço temporariamente indisponível.';
+    return base;
+  }
+
+  window.addEventListener('DOMContentLoaded', ()=>{
+    navActions.hidden = true; fab.hidden = true; appSection.hidden = true;
+    buildHallSelects(); bindUI(); initAuth();
+  });
+})();
