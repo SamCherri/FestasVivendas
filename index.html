@@ -8,7 +8,12 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0B74B8" />
+
+  <!-- Força o CSS atualizado -->
   <link rel="stylesheet" href="style.css?v=16" />
+  <!-- Reforço de segurança: qualquer [hidden] fica invisível, mesmo que alguma regra sobrescreva -->
+  <style>[hidden]{display:none!important}</style>
+
   <script defer src="config.js?v=16" type="module"></script>
 </head>
 <body>
@@ -17,6 +22,8 @@
       <img src="favicon.svg" alt="" width="22" height="22" />
       <span>Vivendas de La Salle — Festas</span>
     </div>
+
+    <!-- IMPORTANTE: começa hidden -->
     <nav id="nav-actions" hidden class="actions" aria-label="Ações principais">
       <button id="btn-new" class="btn primary">Nova Festa</button>
       <button id="btn-export" class="btn ghost" aria-label="Exportar JSON">JSON</button>
@@ -32,7 +39,7 @@
   </section>
 
   <main class="container" role="main">
-    <!-- LOGIN -->
+    <!-- LOGIN (visível inicialmente) -->
     <section id="login-section" class="card max-480 center-v" aria-labelledby="login-title">
       <h1 id="login-title">Acesso interno</h1>
       <p class="muted">Entre com e-mail e senha cadastrados no Firebase.</p>
@@ -48,7 +55,7 @@
       <p class="muted tiny">Problemas de acesso? Contate a administração.</p>
     </section>
 
-    <!-- APP -->
+    <!-- APP (começa oculto) -->
     <section id="app-section" hidden aria-labelledby="app-title">
       <h2 id="app-title" class="visually-hidden">Painel</h2>
 
@@ -133,7 +140,9 @@
       </article>
     </dialog>
 
+    <!-- IMPORTANTE: começa hidden -->
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
+
     <div id="toast" class="toast" hidden aria-live="polite"></div>
     <div id="errbox" class="errbox" hidden aria-live="assertive"></div>
   </main>
@@ -142,18 +151,10 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <script>
-    (function(){
-      const show = (msg)=>{ const el=document.getElementById('errbox'); el.textContent=String(msg||''); el.hidden=false; };
-      window.addEventListener('error', (e)=> show(e.message||e.error));
-      window.addEventListener('unhandledrejection', (e)=> show((e.reason&&e.reason.message)||e.reason||'Erro inesperado'));
-    })();
-  </script>
-
-  <!-- Firebase ES Modules (CDN) + App -->
+  <!-- Firebase ES Modules (CDN) + App v17 -->
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=17"></script>
 </body>
 </html>
