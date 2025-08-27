@@ -8,8 +8,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0B74B8" />
-  <link rel="stylesheet" href="style.css?v=24" />
+  <link rel="stylesheet" href="style.css?v=25" />
   <style>[hidden]{display:none!important}</style>
+  <script defer src="config.js?v=25" type="module"></script>
 </head>
 <body>
   <header class="topbar" role="banner">
@@ -26,7 +27,9 @@
     </nav>
   </header>
 
-  <section class="hero"><img src="hero.svg" alt="Vivendas de La Salle" /></section>
+  <section class="hero" aria-hidden="true">
+    <img src="hero.svg" alt="" />
+  </section>
 
   <main class="container" role="main">
     <!-- LOGIN -->
@@ -55,7 +58,7 @@
         <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
 
-      <!-- Calendário -->
+      <!-- CALENDÁRIO -->
       <section class="card calendar" role="region" aria-label="Calendário mensal">
         <header class="cal-header">
           <button id="cal-prev" class="btn" aria-label="Mês anterior">◀</button>
@@ -69,22 +72,19 @@
         </footer>
       </section>
 
-      <!-- Filtros -->
       <div class="toolbar card" role="region" aria-label="Filtros">
         <form id="filters" class="filters">
           <label>Data <input type="date" name="date" aria-label="Filtrar por data"></label>
           <label>Salão
-            <select name="hall" aria-label="Filtrar por salão"><option value="">Todos</option></select>
-          </label>
-          <label>Buscar (apto/morador)
-            <input type="search" name="q" placeholder="ex: 133 ou Evandro" />
+            <select name="hall" aria-label="Filtrar por salão">
+              <option value="">Todos</option>
+            </select>
           </label>
           <button type="submit" class="btn" aria-label="Aplicar filtros">Filtrar</button>
-          <button type="button" id="btn-clear-filters" class="btn link" aria-label="Limpar filtros">Limpar</button>
+          <button type="button" id="btn-clear-filters" class="btn" aria-label="Limpar filtros">Limpar</button>
         </form>
       </div>
 
-      <!-- Cards + Tabela -->
       <div id="cards" class="cards" aria-live="polite"></div>
       <p id="empty-msg" class="muted center" hidden>Nenhum registro.</p>
       <p id="loading-msg" class="muted center">Carregando…</p>
@@ -102,7 +102,7 @@
       </div>
     </section>
 
-    <!-- DIALOG CADASTRO -->
+    <!-- DIALOG: CADASTRO/EDIÇÃO -->
     <dialog id="party-dialog" aria-labelledby="dialog-title">
       <form method="dialog" id="party-form" class="form" novalidate>
         <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
@@ -136,12 +136,14 @@
       </form>
     </dialog>
 
-    <!-- DIALOG VISUALIZAÇÃO -->
+    <!-- DIALOG: VISUALIZAÇÃO -->
     <dialog id="view-dialog" aria-labelledby="view-title">
       <article class="view-card">
         <header class="dialog-header"><h3 id="view-title">Detalhes da festa</h3></header>
         <div id="view-content" class="view-content"></div>
-        <menu class="dialog-actions"><button id="btn-close-view" class="btn">Fechar</button></menu>
+        <menu class="dialog-actions">
+          <button id="btn-close-view" class="btn">Fechar</button>
+        </menu>
       </article>
     </dialog>
 
@@ -155,6 +157,10 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <script type="module" src="app.js?v=24"></script>
+  <!-- Firebase + App -->
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
+  <script type="module" src="app.js?v=19"></script>
 </body>
 </html>
