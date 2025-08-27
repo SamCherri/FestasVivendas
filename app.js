@@ -1,4 +1,4 @@
-// app.js v22 — Firebase Auth/Firestore, persistência offline, janela de datas e UX mobile
+// app.js v26 — login por click, mensagens de erro visíveis, Firestore offline
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -11,7 +11,17 @@ import {
 (function(){
   'use strict';
 
-  // ==== helpers de UI
+  // —— Diagnóstico de JS (se algo quebrar, aparece na tela)
+  window.addEventListener('error', e=>{
+    const el = document.getElementById('errbox');
+    if (el) { el.hidden=false; el.textContent = 'JS error: ' + (e?.message||''); }
+  });
+  window.addEventListener('unhandledrejection', e=>{
+    const el = document.getElementById('errbox');
+    if (el) { el.hidden=false; el.textContent = 'Promise error: ' + (e?.reason?.message||''); }
+  });
+
+  // Helpers UI
   const $=(s,el=document)=>el.querySelector(s);
   const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
   const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,2000);};
@@ -24,14 +34,14 @@ import {
   const slug=(s)=> String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-_]/gi,'').toLowerCase();
   const escapeHTML=(s)=> String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 
-  // ==== Firebase
+  // Firebase
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  enableIndexedDbPersistence(db).catch(()=>{ /* ignore multi-tab error */ });
+  enableIndexedDbPersistence(db).catch(()=>{ /* ignore multi-tab */ });
   const festasCol = collection(db, 'festas');
 
-  // ==== Estado/UI refs
+  // Estado/UI
   let CACHE = []; let loading = false;
   const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
   const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg'), loadingMsg=$('#loading-msg');
@@ -46,11 +56,10 @@ import {
   // Calendário
   const calGrid = $('#cal-grid'), calTitle = $('#cal-title');
   const calPrev = $('#cal-prev'), calNext = $('#cal-next');
-  let calCursor = new Date(); // mês atual
+  let calCursor = new Date();
 
   let state={filterDate:'', filterHall:'', editingId:null};
 
-  // oculto no start
   navActions.hidden = true; fab.hidden = true; appSection.hidden = true;
 
   function setLoading(flag){ loading=!!flag; loadingMsg.hidden=!loading; }
@@ -103,12 +112,12 @@ import {
     kGuests.textContent = all.reduce((s,r)=> s + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
   }
 
-  // ===== Calendário =====
+  // Calendário
   function monthInfo(d){
     const y=d.getFullYear(), m=d.getMonth();
     const first=new Date(y,m,1);
     const last=new Date(y,m+1,0);
-    const startDow = (first.getDay()+6)%7; // semana iniciando na segunda
+    const startDow = (first.getDay()+6)%7;
     return { y, m, days:last.getDate(), startDow };
   }
   function fmtMonthTitle(d){
@@ -124,7 +133,7 @@ import {
     calGrid.innerHTML = dow.map(d=>`<div class="cal-dow">${d}</div>`).join('');
     const cells = [];
     const prevDays = startDow;
-    const totalCells = 42; // 6 semanas
+    const totalCells = 42;
     const firstGridDate = new Date(y,m,1 - prevDays);
     for(let i=0;i<totalCells;i++){
       const d = new Date(firstGridDate); d.setDate(d.getDate()+i);
@@ -168,7 +177,7 @@ import {
   }
   function openCreateWithDate(dateStr){ openCreate(); $('#party-form [name="date"]').value = dateStr; }
 
-  // ===== Cards/Tabela =====
+  // Cards/Tabela
   function cardHTML(r){
     const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`].map(x=>`<span class="chip">${x}</span>`).join('');
     return `
@@ -219,7 +228,7 @@ import {
     $$('[data-act="del"]',tbody).forEach(b=>b.addEventListener('click',()=>del(b.dataset.id)));
   }
 
-  // ===== Form =====
+  // Form
   function getForm(){
     const fd=new FormData(form);
     const o={
@@ -360,7 +369,7 @@ import {
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
-  // ===== Auth (mensagens claras) =====
+  // Auth
   function applyAuth(user){
     const logged = !!user;
     loginSection.hidden = logged;
@@ -377,10 +386,4 @@ import {
     if (code.includes('auth/user-not-found')) return 'Usuário não encontrado.';
     if (code.includes('auth/too-many-requests')) return 'Muitas tentativas. Aguarde alguns minutos.';
     if (code.includes('auth/network-request-failed')) return 'Sem conexão de rede.';
-    if (code.includes('auth/unauthorized-domain')) return 'Domínio do site não autorizado no Firebase (Authorized domains).';
-    return 'Falha no login.';
-  }
-  function initAuth(){
-    onAuthStateChanged(auth, async (user)=>{
-      applyAuth(user);
-      if(user){ aw
+    if (c
