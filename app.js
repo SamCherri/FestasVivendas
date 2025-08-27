@@ -1,4 +1,4 @@
-// app.js v12 — Firebase (Auth + Firestore) — melhorias de UX/validação/ID determinístico
+// app.js v13 — identidade “Vivendas de La Salle”
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -19,17 +19,13 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   const byDateTime=(a,b)=> (a.date===b.date? (b.start_time||'').localeCompare(a.start_time||'') : (a.date>b.date?-1:1));
   const slug=(s)=> String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-_]/gi,'').toLowerCase();
 
-  // Firebase
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
   const festasCol = collection(db, 'festas');
 
-  // Estado
-  let CACHE = [];
-  let loading = false;
+  let CACHE = []; let loading = false;
 
-  // DOM
   const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
   const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg'), loadingMsg=$('#loading-msg');
   const loginForm=$('#login-form'), btnLogin=$('#btn-login'), filtersForm=$('#filters');
@@ -42,34 +38,22 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
 
   let state={filterDate:'', filterHall:'', editingId:null};
 
-  function setLoading(flag){
-    loading = !!flag;
-    loadingMsg.hidden = !loading;
-  }
-
+  function setLoading(flag){ loading=!!flag; loadingMsg.hidden=!loading; }
   async function reloadAll(){
     setLoading(true); hideErr();
     try{
       const snap = await getDocs(festasCol);
       CACHE = snap.docs.map(d => ({ id:d.id, ...d.data() }));
       render();
-    }catch(err){
-      console.error(err);
-      showErr('Falha ao carregar dados: ' + humanizeFirebaseError(err));
-    }finally{
-      setLoading(false);
-    }
+    }catch(err){ console.error(err); showErr('Falha ao carregar dados: ' + humanizeFirebaseError(err)); }
+    finally{ setLoading(false); }
   }
-
   const getAll = ()=> CACHE.slice();
 
-  // Halls
   function buildHallSelects(){
     filterHallSel.innerHTML = '<option value="">Todos</option>' + CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
     formHallSel.innerHTML   = CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
   }
-
-  // Filtros
   function filtered(rows){
     return rows.filter(r=>{
       if(state.filterDate && r.date!==state.filterDate) return false;
@@ -77,14 +61,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       return true;
     }).sort(byDateTime);
   }
-
-  function render(){
-    const rows=filtered(getAll());
-    emptyMsg.hidden = rows.length>0 || loading;
-    renderCards(rows); renderTable(rows); renderMetrics(getAll());
-  }
-
-  // KPIs
+  function render(){ const rows=filtered(getAll()); emptyMsg.hidden = rows.length>0 || loading; renderCards(rows); renderTable(rows); renderMetrics(getAll()); }
   function renderMetrics(all){
     const today=fmtDate(new Date());
     kToday.textContent = all.filter(r=>r.date===today).length;
@@ -93,7 +70,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     kGuests.textContent = all.reduce((s,r)=> s + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
   }
 
-  // Cards
   function cardHTML(r){
     const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`].map(x=>`<span class="chip">${x}</span>`).join('');
     return `
@@ -103,8 +79,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         <div class="kv"><span>Morador</span><span>${escapeHTML(r.resident_name)}</span></div>
         <div class="mats">${chips}</div>
         <div class="row-actions">
-          <button class="btn" data-act="edit" aria-label="Editar">Editar</button>
-          <button class="btn" data-act="view" aria-label="Ver detalhes">Ver</button>
+          <button class="btn primary" data-act="edit" aria-label="Editar">Editar</button>
+          <button class="btn primary" data-act="view" aria-label="Ver detalhes">Ver</button>
           <button class="btn" data-act="dup"  aria-label="Duplicar">Duplicar</button>
           <button class="btn" data-act="ics"  aria-label="Baixar ICS">ICS</button>
           <button class="btn danger" data-act="del" aria-label="Excluir">Excluir</button>
@@ -122,16 +98,14 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       card.querySelector('[data-act="del"]').addEventListener('click', ()=>del(id));
     });
   }
-
-  // Tabela
   function rowHTML(r){
     return `<tr>
       <td>${r.date}</td><td>${r.start_time||''}</td><td>${r.end_time||''}</td>
       <td>${r.hall}</td><td>${escapeHTML(r.apartment)}</td><td>${escapeHTML(r.resident_name)}</td>
       <td>${mats(r)}</td>
       <td><div class="row-actions">
-          <button class="btn" data-act="edit" data-id="${r.id}">Editar</button>
-          <button class="btn" data-act="view" data-id="${r.id}">Ver</button>
+          <button class="btn primary" data-act="edit" data-id="${r.id}">Editar</button>
+          <button class="btn primary" data-act="view" data-id="${r.id}">Ver</button>
           <button class="btn" data-act="dup"  data-id="${r.id}">Duplicar</button>
           <button class="btn" data-act="ics"  data-id="${r.id}">ICS</button>
           <button class="btn danger" data-act="del" data-id="${r.id}">Excluir</button>
@@ -146,7 +120,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     $$('[data-act="del"]',tbody).forEach(b=>b.addEventListener('click',()=>del(b.dataset.id)));
   }
 
-  // Formulário
   function getForm(){
     const fd=new FormData(form);
     const o={
@@ -163,31 +136,23 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       resident_name: (fd.get('resident_name')||'').toString().trim(),
       guests_text: (fd.get('guests_text')||'').toString()
     };
-    // Validações
-    if(!o.date){ return err('Informe a data.'); }
-    if(!o.start_time){ return err('Informe o horário de início.'); }
-    if(!o.hall){ return err('Informe o salão.'); }
-    if(!o.apartment){ return err('Informe o apartamento.'); }
-    if(!o.resident_name){ return err('Informe o nome do morador.'); }
-    if(o.end_time && parseTime(o.end_time)<=parseTime(o.start_time)){ return err('Término deve ser após o início.'); }
+    if(!o.date) return err('Informe a data.');
+    if(!o.start_time) return err('Informe o horário de início.');
+    if(!o.hall) return err('Informe o salão.');
+    if(!o.apartment) return err('Informe o apartamento.');
+    if(!o.resident_name) return err('Informe o nome do morador.');
+    if(o.end_time && parseTime(o.end_time)<=parseTime(o.start_time)) return err('Término deve ser após o início.');
     ['cups','forks','knives','spoons','plates'].forEach(k=>{ if(o[k]<0||Number.isNaN(o[k])) o[k]=0; });
     return o;
   }
   function err(m){ showErr(m); return null; }
 
   function composeId(p){
-    // ID único: data_hall_inicio (ex: 2025-09-10_gourmet_1900)
-    const key = `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`;
-    return key;
+    // ID único: 2025-09-10_gourmet_1900
+    return `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`;
   }
 
-  function openCreate(){
-    form.reset();
-    $('#party-form [name="date"]').value=fmtDate(new Date());
-    formHallSel.value=CONFIG.halls[0]||'';
-    dialogTitle.textContent='Nova Festa';
-    dialog.showModal();
-  }
+  function openCreate(){ form.reset(); $('#party-form [name="date"]').value=fmtDate(new Date()); formHallSel.value=CONFIG.halls[0]||''; dialogTitle.textContent='Nova Festa'; dialog.showModal(); }
   function fill(p,id){
     form.dataset.editId = id || '';
     $('#party-form [name="date"]').value=p.date||'';
@@ -207,7 +172,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
 
   function showView(id){
     const p=getAll().find(x=>x.id===id); if(!p)return;
-    viewContent.innerHTML=`
+    const nl=(s)=>String(s||'').replace(/\n/g,'<br>');
+    $('#view-content').innerHTML=`
       <div class="view-line"><strong>Data</strong><span>${p.date}</span></div>
       <div class="view-line"><strong>Início</strong><span>${p.start_time||''}</span></div>
       <div class="view-line"><strong>Término</strong><span>${p.end_time||''}</span></div>
@@ -215,8 +181,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       <div class="view-line"><strong>Apto</strong><span>${escapeHTML(p.apartment)}</span></div>
       <div class="view-line"><strong>Morador</strong><span>${escapeHTML(p.resident_name)}</span></div>
       <div class="view-line"><strong>Materiais</strong><span>${mats(p)}</span></div>
-      <div class="view-line"><strong>Convidados</strong><span>${(p.guests_text||'').replace(/\n/g,'<br>')||'(não informado)'}</span></div>`;
-    viewDialog.showModal();
+      <div class="view-line"><strong>Convidados</strong><span>${nl(p.guests_text)||'(não informado)'}</span></div>`;
+    $('#view-dialog').showModal();
   }
 
   async function saveParty(){
@@ -224,55 +190,33 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     const p=getForm(); if(!p) return;
     const isEdit = !!form.dataset.editId;
     const id = isEdit ? form.dataset.editId : composeId(p);
-
-    // Antiduplicata: se novo e ID já existe, avisa
     try{
-      btnSave.disabled = true; btnSave.textContent = isEdit ? 'Salvando…' : 'Criando…';
+      $('#btn-save').disabled=true; $('#btn-save').textContent = isEdit ? 'Salvando…' : 'Criando…';
       if(!isEdit){
         const exists = await getDoc(doc(festasCol, id));
-        if(exists.exists()){
-          showErr('Já existe uma festa para este salão, data e horário. Altere o horário ou o salão.');
-          btnSave.disabled=false; btnSave.textContent='Salvar'; return;
-        }
+        if(exists.exists()){ showErr('Já existe uma festa para este salão, data e horário.'); $('#btn-save').disabled=false; $('#btn-save').textContent='Salvar'; return; }
       }
       await setDoc(doc(festasCol, id), p);
       dialog.close(); await reloadAll(); toast(isEdit?'Festa atualizada.':'Festa criada.');
-    }catch(err){
-      console.error(err); showErr('Erro ao salvar: ' + humanizeFirebaseError(err));
-    }finally{
-      btnSave.disabled=false; btnSave.textContent='Salvar';
-    }
+    }catch(err){ console.error(err); showErr('Erro ao salvar: ' + humanizeFirebaseError(err)); }
+    finally{ $('#btn-save').disabled=false; $('#btn-save').textContent='Salvar'; }
   }
 
   async function del(id){
     if(!confirm('Confirmar exclusão?')) return;
-    try{
-      await deleteDoc(doc(festasCol, id));
-      await reloadAll(); toast('Festa removida.');
-    }catch(err){
-      console.error(err); showErr('Erro ao excluir: ' + humanizeFirebaseError(err));
-    }
+    try{ await deleteDoc(doc(festasCol, id)); await reloadAll(); toast('Festa removida.'); }
+    catch(err){ console.error(err); showErr('Erro ao excluir: ' + humanizeFirebaseError(err)); }
   }
-
   function duplicate(id){
     const src=getAll().find(x=>x.id===id); if(!src)return;
-    const copy={...src};
-    // Sugerir novo horário (se houver) + novo ID
-    const baseStart = parseTime(copy.start_time)||0;
-    const h = String(Math.floor(baseStart/60)).padStart(2,'0');
-    const m = String(baseStart%60).padStart(2,'0');
-    copy.start_time = `${h}:${m}`;
-    const newId = composeId(copy);
-    setDoc(doc(festasCol, newId), copy)
-      .then(reloadAll)
-      .then(()=>toast('Festa duplicada.'))
+    const copy={...src}; const newId=composeId(copy);
+    setDoc(doc(festasCol, newId), copy).then(reloadAll).then(()=>toast('Festa duplicada.'))
       .catch(err=>{ console.error(err); showErr('Erro ao duplicar: ' + humanizeFirebaseError(err)); });
   }
-
   function downloadICS(id){
     const p=getAll().find(x=>x.id===id); if(!p)return;
     const dt=(d,t)=>`${d.replace(/-/g,'')}`+(t?`T${t.replace(':','')}00`:'');
-    const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Vivendas//Festas//PT-BR','BEGIN:VEVENT',
+    const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Vivendas de La Salle//Festas//PT-BR','BEGIN:VEVENT',
       `UID:${id}@vivendas`,`DTSTART:${dt(p.date,p.start_time)}`,`DTEND:${dt(p.date,p.end_time||p.start_time)}`,
       `SUMMARY:Festa - ${p.resident_name} (${p.apartment})`,`LOCATION:${p.hall}`,
       `DESCRIPTION:Materiais: ${mats(p)}\\nConvidados:\\n${(p.guests_text||'').replace(/\\n/g,'; ')}`,
@@ -280,7 +224,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); a.download=`festa-${p.date}.ics`; a.click(); URL.revokeObjectURL(a.href);
   }
 
-  // Filtros e binds
   function bindUI(){
     $('#filters').addEventListener('submit', e=>{
       e.preventDefault(); hideErr();
@@ -291,32 +234,27 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     });
     $('#btn-clear-filters').addEventListener('click', ()=>{ $('#filters').reset(); state.filterDate=''; state.filterHall=''; render(); });
 
-    btnNew.addEventListener('click', openCreate);
-    fab.addEventListener('click', openCreate);
+    $('#btn-new').addEventListener('click', openCreate);
+    $('#fab-new').addEventListener('click', openCreate);
 
-    btnExport.addEventListener('click', ()=>{
-      const rows=getAll();
-      const a=document.createElement('a');
+    $('#btn-export').addEventListener('click', ()=>{
+      const rows=getAll(); const a=document.createElement('a');
       a.href=URL.createObjectURL(new Blob([JSON.stringify(rows,null,2)],{type:'application/json'}));
       a.download='festas.json'; a.click();
     });
-    btnCSV.addEventListener('click', ()=>{
-      const rows=getAll();
-      const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text'];
+    $('#btn-export-csv').addEventListener('click', ()=>{
+      const rows=getAll(); const h=['date','start_time','end_time','hall','apartment','resident_name','cups','forks','knives','spoons','plates','guests_text'];
       const esc=s=>`"${String(s??'').replace(/"/g,'""')}"`;
       const csv=[h.join(',')].concat(rows.map(r=>h.map(k=>esc(r[k])).join(','))).join('\n');
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-      a.download='festas.csv'; a.click();
+      const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='festas.csv'; a.click();
     });
 
     form.addEventListener('submit', e=>e.preventDefault());
-    btnSave.addEventListener('click', saveParty);
-    btnCancel.addEventListener('click', ()=>dialog.close());
-    btnCloseView.addEventListener('click', ()=>viewDialog.close());
+    $('#btn-save').addEventListener('click', saveParty);
+    $('#btn-cancel').addEventListener('click', ()=>dialog.close());
+    $('#btn-close-view').addEventListener('click', ()=>viewDialog.close());
   }
 
-  // Auth
   function applyAuth(user){
     const logged=!!user;
     loginSection.hidden=logged; appSection.hidden=!logged; navActions.hidden=!logged; fab.hidden=!logged;
@@ -333,19 +271,13 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       const fd=new FormData(e.target);
       const email=(fd.get('email')||'').toString().trim();
       const password=(fd.get('password')||'').toString();
-      try{
-        btnLogin.disabled=true; btnLogin.textContent='Entrando…';
-        await signInWithEmailAndPassword(auth, email, password);
-      }catch(err){
-        console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err));
-      }finally{
-        btnLogin.disabled=false; btnLogin.textContent='Entrar';
-      }
+      try{ btnLogin.disabled=true; btnLogin.textContent='Entrando…'; await signInWithEmailAndPassword(auth, email, password); }
+      catch(err){ console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err)); }
+      finally{ btnLogin.disabled=false; btnLogin.textContent='Entrar'; }
     });
     btnLogout.addEventListener('click', ()=>signOut(auth));
   }
 
-  // Utils
   function escapeHTML(s){ return String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
   function humanizeFirebaseError(err){
     const code = String(err?.code||'').toLowerCase();
@@ -360,9 +292,5 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     return err?.message || 'Erro inesperado';
   }
 
-  // Boot
-  window.addEventListener('DOMContentLoaded', ()=>{
-    buildHallSelects();
-    bindUI(); initAuth();
-  });
+  window.addEventListener('DOMContentLoaded', ()=>{ buildHallSelects(); bindUI(); initAuth(); });
 })();
