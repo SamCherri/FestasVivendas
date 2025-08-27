@@ -1,22 +1,21 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vivendas de La Salles — Festas</title>
-  <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salles. Acesso restrito.">
-  <link rel="icon" href="favicon.png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1976d2">
-
-  <link rel="stylesheet" href="style.css?v=12">
-  <script defer src="config.js?v=12" type="module"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vivendas de La Salle — Festas</title>
+  <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0B74B8" />
+  <link rel="stylesheet" href="style.css?v=13" />
+  <script defer src="config.js?v=13" type="module"></script>
 </head>
 <body>
   <header class="topbar" role="banner">
     <div class="brand">
-      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1-6.2-3.4-3.4 1.4-1.4 2 2 5-5 1.4 1.4-6.4 6.4Z"/></svg>
-      <span>Vivendas de La Salles — Festas</span>
+      <img src="favicon.svg" alt="" width="22" height="22" />
+      <span>Vivendas de La Salle — Festas</span>
     </div>
     <nav id="nav-actions" hidden class="actions" aria-label="Ações principais">
       <button id="btn-new" class="btn primary">Nova Festa</button>
@@ -26,6 +25,11 @@
       <button id="btn-logout" class="btn link" aria-label="Sair">Sair</button>
     </nav>
   </header>
+
+  <!-- Hero decorativo -->
+  <section class="hero">
+    <img src="hero.svg" alt="Vivendas de La Salle" />
+  </section>
 
   <main class="container" role="main">
     <!-- LOGIN -->
@@ -75,8 +79,8 @@
         <table class="table" aria-label="Festas">
           <thead>
             <tr>
-              <th scope="col">Data</th><th scope="col">Início</th><th scope="col">Término</th><th scope="col">Salão</th>
-              <th scope="col">Apto</th><th scope="col">Morador</th><th scope="col">Materiais</th><th scope="col">Ações</th>
+              <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
+              <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
             </tr>
           </thead>
           <tbody id="tbody-parties"></tbody>
@@ -84,7 +88,7 @@
       </div>
     </section>
 
-    <!-- MODAL -->
+    <!-- Dialogs permanecem iguais à versão anterior -->
     <dialog id="party-dialog" aria-labelledby="dialog-title">
       <form method="dialog" id="party-form" class="form" novalidate>
         <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
@@ -130,8 +134,6 @@
 
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
     <div id="toast" class="toast" hidden aria-live="polite"></div>
-
-    <!-- Caixa de erros (visível no celular) -->
     <div id="errbox" class="errbox" hidden aria-live="assertive"></div>
   </main>
 
@@ -139,8 +141,8 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <!-- Captura erros globais -->
   <script>
+    // captura erros globais
     (function(){
       const show = (msg)=>{ const el=document.getElementById('errbox'); el.textContent=String(msg||''); el.hidden=false; };
       window.addEventListener('error', (e)=> show(e.message||e.error));
@@ -148,10 +150,10 @@
     })();
   </script>
 
-  <!-- Firebase SDKs (ES Modules por CDN) + App -->
+  <!-- Firebase ES Modules (CDN) + App -->
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=12"></script>
+  <script type="module" src="app.js?v=13"></script>
 </body>
 </html>
