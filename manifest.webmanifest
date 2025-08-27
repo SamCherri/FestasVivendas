@@ -1,9 +1,9 @@
 {
   "name": "Vivendas de La Salle — Festas",
   "short_name": "Festas Vivendas",
-  "start_url": "/FestasVivendas/?v=13",
+  "start_url": "/FestasVivendas/?v=16",
   "display": "standalone",
-  "background_color": "#f6f8fb",
+  "background_color": "#f8fafc",
   "theme_color": "#0B74B8",
   "icons": [
     { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
