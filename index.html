@@ -8,9 +8,10 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0B74B8" />
-  <link rel="stylesheet" href="style.css?v=18" />
+  <link rel="stylesheet" href="style.css?v=19" />
+  <!-- Garante que qualquer [hidden] esteja realmente invisível -->
   <style>[hidden]{display:none!important}</style>
-  <script defer src="config.js?v=16" type="module"></script>
+  <script defer src="config.js?v=19" type="module"></script>
 </head>
 <body>
   <header class="topbar" role="banner">
@@ -18,6 +19,7 @@
       <img src="favicon.svg" alt="" width="22" height="22" />
       <span>Vivendas de La Salle — Festas</span>
     </div>
+    <!-- começa oculto; só exibe após login -->
     <nav id="nav-actions" hidden class="actions" aria-label="Ações principais">
       <button id="btn-new" class="btn primary">Nova Festa</button>
       <button id="btn-export" class="btn ghost" aria-label="Exportar JSON">JSON</button>
@@ -102,7 +104,7 @@
       </div>
     </section>
 
-    <!-- DIALOGs permanecem iguais -->
+    <!-- DIALOG: CADASTRO/EDIÇÃO -->
     <dialog id="party-dialog" aria-labelledby="dialog-title">
       <form method="dialog" id="party-form" class="form" novalidate>
         <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
@@ -136,6 +138,7 @@
       </form>
     </dialog>
 
+    <!-- DIALOG: VISUALIZAÇÃO -->
     <dialog id="view-dialog" aria-labelledby="view-title">
       <article class="view-card">
         <header class="dialog-header"><h3 id="view-title">Detalhes da festa</h3></header>
@@ -146,7 +149,9 @@
       </article>
     </dialog>
 
+    <!-- botão flutuante: oculto antes do login -->
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
+
     <div id="toast" class="toast" hidden aria-live="polite"></div>
     <div id="errbox" class="errbox" hidden aria-live="assertive"></div>
   </main>
@@ -155,9 +160,10 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
+  <!-- Firebase ES Modules (CDN) + App -->
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=18"></script>
+  <script type="module" src="app.js?v=19"></script>
 </body>
 </html>
