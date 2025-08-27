@@ -1,13 +1,17 @@
-// app.js v20 — legibilidade, A+/A-, calendário com ponto e UX
+// app.js v22 — Firebase Auth/Firestore, persistência offline, janela de datas e UX mobile
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
-  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc,
+  enableIndexedDbPersistence, query, orderBy, startAt, endAt
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 (function(){
   'use strict';
+
+  // ==== helpers de UI
   const $=(s,el=document)=>el.querySelector(s);
   const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
   const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,2000);};
@@ -18,14 +22,16 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   const mats=(r)=>`copos ${r.cups||0}, garfos ${r.forks||0}, facas ${r.knives||0}, colheres ${r.spoons||0}, pratos ${r.plates||0}`;
   const byDateTime=(a,b)=> (a.date===b.date? (b.start_time||'').localeCompare(a.start_time||'') : (a.date>b.date?-1:1));
   const slug=(s)=> String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-_]/gi,'').toLowerCase();
+  const escapeHTML=(s)=> String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 
-  // Firebase
+  // ==== Firebase
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  enableIndexedDbPersistence(db).catch(()=>{ /* ignore multi-tab error */ });
   const festasCol = collection(db, 'festas');
 
-  // Estado/UI
+  // ==== Estado/UI refs
   let CACHE = []; let loading = false;
   const loginSection=$('#login-section'), appSection=$('#app-section'), navActions=$('#nav-actions'), fab=$('#fab-new');
   const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg'), loadingMsg=$('#loading-msg');
@@ -44,13 +50,25 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
 
   let state={filterDate:'', filterHall:'', editingId:null};
 
+  // oculto no start
   navActions.hidden = true; fab.hidden = true; appSection.hidden = true;
 
   function setLoading(flag){ loading=!!flag; loadingMsg.hidden=!loading; }
+  function rangeISO() {
+    const pad = n => String(n).padStart(2,'0');
+    const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    const from = new Date(now); from.setDate(from.getDate()-60);
+    const to   = new Date(now); to.setDate(to.getDate()+90);
+    return [iso(from), iso(to)];
+  }
+
   async function reloadAll(){
     setLoading(true); hideErr();
     try{
-      const snap = await getDocs(festasCol);
+      const [from,to] = rangeISO();
+      const q = query(festasCol, orderBy('date'), startAt(from), endAt(to));
+      const snap = await getDocs(q);
       CACHE = snap.docs.map(d => ({ id:d.id, ...d.data() }));
       render();
     }catch(err){ console.error(err); showErr('Falha ao carregar dados: ' + humanizeFirebaseError(err)); }
@@ -62,7 +80,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     filterHallSel.innerHTML = '<option value="">Todos</option>' + CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
     formHallSel.innerHTML   = CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
   }
-
   function filtered(rows){
     return rows.filter(r=>{
       if(state.filterDate && r.date!==state.filterDate) return false;
@@ -70,7 +87,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       return true;
     }).sort(byDateTime);
   }
-
   function render(){
     const rows=filtered(getAll());
     emptyMsg.hidden = rows.length>0 || loading;
@@ -79,7 +95,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     renderTable(rows);
     renderMetrics(getAll());
   }
-
   function renderMetrics(all){
     const today=fmtDate(new Date());
     kToday.textContent = all.filter(r=>r.date===today).length;
@@ -101,12 +116,10 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
             .replace(/^./, c=>c.toUpperCase());
   }
   function renderCalendar(){
-    const {y,m,days,startDow} = monthInfo(calCursor);
+    const {y,m,startDow} = monthInfo(calCursor);
     calTitle.textContent = fmtMonthTitle(calCursor);
     const todayStr = fmtDate(new Date());
-    // contagem de festas por dia
     const counts = getAll().reduce((acc,r)=>{ acc[r.date]=(acc[r.date]||0)+1; return acc; }, {});
-    // cabeçalho e células
     const dow = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
     calGrid.innerHTML = dow.map(d=>`<div class="cal-dow">${d}</div>`).join('');
     const cells = [];
@@ -129,7 +142,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         </div>`);
     }
     calGrid.insertAdjacentHTML('beforeend', cells.join(''));
-    // clique = filtra; clique longo = criar
     let pressTimer=null;
     calGrid.querySelectorAll('.cal-hit').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -151,7 +163,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         pressTimer = setTimeout(()=>{ openCreateWithDate(date); }, 700);
       }, {passive:true});
     });
-
     calPrev.onclick = ()=>{ calCursor = new Date(y, m-1, 1); renderCalendar(); };
     calNext.onclick = ()=>{ calCursor = new Date(y, m+1, 1); renderCalendar(); };
   }
@@ -235,7 +246,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     return o;
   }
   function err(m){ showErr(m); return null; }
-
   function composeId(p){ return `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`; }
 
   function openCreate(){
@@ -326,7 +336,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     });
     $('#btn-clear-filters').addEventListener('click', ()=>{ $('#filters').reset(); state.filterDate=''; state.filterHall=''; render(); });
 
-    btnNew.addEventListener('click', openCreate);
+    $('#btn-new').addEventListener('click', openCreate);
     fab.addEventListener('click', openCreate);
 
     btnExport.addEventListener('click', ()=>{
@@ -350,44 +360,27 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
-  // ===== Auth =====
+  // ===== Auth (mensagens claras) =====
   function applyAuth(user){
     const logged = !!user;
     loginSection.hidden = logged;
     appSection.hidden = !logged;
     navActions.hidden = !logged;
     fab.hidden = !logged;
-    currentUser.textContent = logged ? user.email : '';
+    currentUser.textContent = logged ? (user.email || '') : '';
     if (logged) hideErr();
   }
-
+  function readableAuthError(err){
+    const code = String(err?.code||'').toLowerCase();
+    if (code.includes('auth/invalid-email')) return 'E-mail inválido.';
+    if (code.includes('auth/wrong-password')) return 'Senha incorreta.';
+    if (code.includes('auth/user-not-found')) return 'Usuário não encontrado.';
+    if (code.includes('auth/too-many-requests')) return 'Muitas tentativas. Aguarde alguns minutos.';
+    if (code.includes('auth/network-request-failed')) return 'Sem conexão de rede.';
+    if (code.includes('auth/unauthorized-domain')) return 'Domínio do site não autorizado no Firebase (Authorized domains).';
+    return 'Falha no login.';
+  }
   function initAuth(){
     onAuthStateChanged(auth, async (user)=>{
       applyAuth(user);
-      if(user){ await reloadAll(); toast('Login efetuado.'); }
-    });
-    loginForm.addEventListener('submit', async (e)=>{
-      e.preventDefault(); hideErr();
-      const fd=new FormData(e.target);
-      const email=(fd.get('email')||'').toString().trim();
-      const password=(fd.get('password')||'').toString();
-      try{
-        btnLogin.disabled=true; btnLogin.textContent='Entrando…';
-        await signInWithEmailAndPassword(auth, email, password);
-      }catch(err){
-        console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err));
-      }finally{
-        btnLogin.disabled=false; btnLogin.textContent='Entrar';
-      }
-    });
-    btnLogout.addEventListener('click', ()=>signOut(auth));
-  }
-
-  // ===== A+ / A− =====
-  (function fontControls(){
-    const html = document.documentElement;
-    const KEY='vivendas_font_scale';
-    function apply(scale){ html.style.fontSize = `calc(${scale} * 1em)`; }
-    const saved = parseFloat(localStorage.getItem(KEY) || '1'); if(!isNaN(saved) && saved!==1) apply(saved);
-    $('#font-inc')?.addEventListener('click', ()=>{ const cur=parseFloat(localStorage.getItem(KEY)||'1'); const next=Math.min(1.3,cur+0.1); localStorage.setItem(KEY,String(next)); apply(next); });
-    $('#font-dec')?.addEventListener('click', ()=>{ const cur=parseFloat(localStorage.getItem(KEY)||'1'); const next=Math.max(0.9,cur-0.1); localStorage.setItem(KEY,String(
+      if(user){ aw
