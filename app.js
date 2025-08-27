@@ -1,4 +1,4 @@
-// app.js v18 — Calendário mensal + clique para filtrar + long-press para criar
+// app.js v19 — Auth + Firestore + Calendário mensal + UX
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -44,7 +44,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
 
   let state={filterDate:'', filterHall:'', editingId:null};
 
-  // Garante oculto no start
+  // oculto no start
   navActions.hidden = true; fab.hidden = true; appSection.hidden = true;
 
   function setLoading(flag){ loading=!!flag; loadingMsg.hidden=!loading; }
@@ -73,7 +73,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   function render(){
     const rows=filtered(getAll());
     emptyMsg.hidden = rows.length>0 || loading;
-    renderCalendar();              // NOVO: renderiza calendário
+    renderCalendar();
     renderCards(rows);
     renderTable(rows);
     renderMetrics(getAll());
@@ -86,31 +86,30 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     kGuests.textContent = all.reduce((s,r)=> s + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
   }
 
-  // ====== Calendário (macro) ======
+  // ===== Calendário (macro) =====
   function monthInfo(d){
     const y=d.getFullYear(), m=d.getMonth();
     const first=new Date(y,m,1);
     const last=new Date(y,m+1,0);
-    const startDow = (first.getDay()+6)%7; // transformar para semana começando em segunda (0=seg)
+    const startDow = (first.getDay()+6)%7; // semana iniciando na segunda
     return { y, m, days:last.getDate(), startDow };
   }
   function fmtMonthTitle(d){
     return d.toLocaleDateString('pt-BR', { month:'long', year:'numeric' })
-      .replace(/^./, c=>c.toUpperCase()); // capitaliza primeira letra
+            .replace(/^./, c=>c.toUpperCase());
   }
   function renderCalendar(){
     const {y,m,days,startDow} = monthInfo(calCursor);
     calTitle.textContent = fmtMonthTitle(calCursor);
     const todayStr = fmtDate(new Date());
-    // Mapear quantas festas por dia
+    // contagem de festas por dia
     const counts = getAll().reduce((acc,r)=>{ acc[r.date]=(acc[r.date]||0)+1; return acc; }, {});
-    // Construir células: cabeçalho dias da semana + 6 linhas
+    // cabeçalho e células
     const dow = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
     calGrid.innerHTML = dow.map(d=>`<div class="cal-dow">${d}</div>`).join('');
     const cells = [];
     const prevDays = startDow;
-    const totalCells = 42; // 6 semanas x 7 dias
-    // Data base para iteração
+    const totalCells = 42; // 6 semanas
     const firstGridDate = new Date(y,m,1 - prevDays);
     for(let i=0;i<totalCells;i++){
       const d = new Date(firstGridDate); d.setDate(d.getDate()+i);
@@ -118,9 +117,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       const inMonth = d.getMonth()===m;
       const isToday = ds===todayStr;
       const has = counts[ds]>0;
-      const classes = ['cal-cell'];
-      if(!inMonth) classes.push('cal-out');
-      if(isToday) classes.push('cal-today');
+      const classes = ['cal-cell']; if(!inMonth) classes.push('cal-out'); if(isToday) classes.push('cal-today');
       const badge = has ? `<span class="badge-small">${counts[ds]} festa(s)</span>` : '';
       cells.push(`
         <div class="${classes.join(' ')}">
@@ -131,7 +128,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         </div>`);
     }
     calGrid.insertAdjacentHTML('beforeend', cells.join(''));
-    // Eventos: clique = filtra; long-press = abre criação
+    // clique = filtra; clique prolongado = cria
     let pressTimer=null;
     calGrid.querySelectorAll('.cal-hit').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -139,7 +136,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         state.filterDate = date;
         $('#filters [name="date"]').value = date;
         render();
-        // rola para lista
         document.getElementById('cards').scrollIntoView({behavior:'smooth', block:'start'});
       });
       btn.addEventListener('mousedown', (e)=>{
@@ -155,15 +151,11 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       }, {passive:true});
     });
 
-    // Navegação de mês
     calPrev.onclick = ()=>{ calCursor = new Date(y, m-1, 1); renderCalendar(); };
     calNext.onclick = ()=>{ calCursor = new Date(y, m+1, 1); renderCalendar(); };
   }
-  function openCreateWithDate(dateStr){
-    openCreate();
-    $('#party-form [name="date"]').value = dateStr;
-  }
-  // ====== Fim calendário ======
+  function openCreateWithDate(dateStr){ openCreate(); $('#party-form [name="date"]').value = dateStr; }
+  // ===== fim calendário =====
 
   function cardHTML(r){
     const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`].map(x=>`<span class="chip">${x}</span>`).join('');
@@ -250,10 +242,6 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     formHallSel.value=CONFIG.halls[0]||'';
     dialogTitle.textContent='Nova Festa';
     $('#party-dialog').showModal();
-  }
-  function openCreateWithDate(dateStr){
-    openCreate();
-    $('#party-form [name="date"]').value = dateStr;
   }
   function fill(p,id){
     form.dataset.editId = id || '';
@@ -364,6 +352,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
+  // controle por autenticação
   function applyAuth(user){
     const logged = !!user;
     loginSection.hidden = logged;
@@ -398,4 +387,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
 
   function escapeHTML(s){ return String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
   function humanizeFirebaseError(err){
-    con
+    const code = String(err?.code||'').toLowerCase();
+    if(code.includes('permission-denied')) return 'Sem permissão. Faça login.';
+    if(code.includes('unauthenticated')) return 'Você precisa estar logado.';
+    if(code.includes('failed-precondition')) return 'Condição inválida. Verifique suas regras do Firestore.';
+    if(code.includes('unavailable')) return 'Serviço t
