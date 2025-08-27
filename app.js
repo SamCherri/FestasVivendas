@@ -1,4 +1,4 @@
-// app.js v13 — identidade “Vivendas de La Salle”
+// app.js v16 — Firebase (Auth + Firestore), UX/validação/ID anti-duplicata
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
@@ -30,8 +30,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   const currentUser=$('#current-user'), tbody=$('#tbody-parties'), cards=$('#cards'), emptyMsg=$('#empty-msg'), loadingMsg=$('#loading-msg');
   const loginForm=$('#login-form'), btnLogin=$('#btn-login'), filtersForm=$('#filters');
   const btnNew=$('#btn-new'), btnExport=$('#btn-export'), btnCSV=$('#btn-export-csv'), btnLogout=$('#btn-logout');
-  const dialog=$('#party-dialog'), form=$('#party-form'), dialogTitle=$('#dialog-title'), btnSave=$('#btn-save'), btnCancel=$('#btn-cancel');
-  const viewDialog=$('#view-dialog'), viewContent=$('#view-content'), btnCloseView=$('#btn-close-view');
+  const dialog=$('#party-dialog'), form=$('#party-form'), dialogTitle=$('#dialog-title'), btnSave=$('#btn-save');
+  const viewDialog=$('#view-dialog'), viewContent=$('#view-content');
   const filterHallSel=filtersForm.querySelector('select[name="hall"]');
   const formHallSel=form.querySelector('select[name="hall"]');
   const kToday=$('#kpi-today'), kUpcoming=$('#kpi-upcoming'), kGuests=$('#kpi-guests');
@@ -112,6 +112,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
       </div></td></tr>`;
   }
   function renderTable(rows){
+    const tbody=$('#tbody-parties');
     tbody.innerHTML = rows.map(rowHTML).join('');
     $$('[data-act="edit"]',tbody).forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
     $$('[data-act="view"]',tbody).forEach(b=>b.addEventListener('click',()=>showView(b.dataset.id)));
@@ -148,11 +149,11 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
   function err(m){ showErr(m); return null; }
 
   function composeId(p){
-    // ID único: 2025-09-10_gourmet_1900
+    // ID único por combinação: data + salão + início (ex.: 2025-09-10_gourmet_1900)
     return `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`;
   }
 
-  function openCreate(){ form.reset(); $('#party-form [name="date"]').value=fmtDate(new Date()); formHallSel.value=CONFIG.halls[0]||''; dialogTitle.textContent='Nova Festa'; dialog.showModal(); }
+  function openCreate(){ form.reset(); $('#party-form [name="date"]').value=fmtDate(new Date()); formHallSel.value=CONFIG.halls[0]||''; dialogTitle.textContent='Nova Festa'; $('#party-dialog').showModal(); }
   function fill(p,id){
     form.dataset.editId = id || '';
     $('#party-form [name="date"]').value=p.date||'';
@@ -168,7 +169,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
     $('#party-form [name="resident_name"]').value=p.resident_name||'';
     $('#party-form [name="guests_text"]').value=p.guests_text||'';
   }
-  function openEdit(id){ const p=getAll().find(x=>x.id===id); if(!p)return; dialogTitle.textContent='Editar Festa'; fill(p,id); dialog.showModal(); }
+  function openEdit(id){ const p=getAll().find(x=>x.id===id); if(!p)return; dialogTitle.textContent='Editar Festa'; fill(p,id); $('#party-dialog').showModal(); }
 
   function showView(id){
     const p=getAll().find(x=>x.id===id); if(!p)return;
@@ -197,7 +198,7 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
         if(exists.exists()){ showErr('Já existe uma festa para este salão, data e horário.'); $('#btn-save').disabled=false; $('#btn-save').textContent='Salvar'; return; }
       }
       await setDoc(doc(festasCol, id), p);
-      dialog.close(); await reloadAll(); toast(isEdit?'Festa atualizada.':'Festa criada.');
+      $('#party-dialog').close(); await reloadAll(); toast(isEdit?'Festa atualizada.':'Festa criada.');
     }catch(err){ console.error(err); showErr('Erro ao salvar: ' + humanizeFirebaseError(err)); }
     finally{ $('#btn-save').disabled=false; $('#btn-save').textContent='Salvar'; }
   }
@@ -251,8 +252,8 @@ import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
 
     form.addEventListener('submit', e=>e.preventDefault());
     $('#btn-save').addEventListener('click', saveParty);
-    $('#btn-cancel').addEventListener('click', ()=>dialog.close());
-    $('#btn-close-view').addEventListener('click', ()=>viewDialog.close());
+    $('#btn-cancel').addEventListener('click', ()=>$('#party-dialog').close());
+    $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
   function applyAuth(user){
