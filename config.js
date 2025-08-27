@@ -1,4 +1,4 @@
-// config.js v12
+// config.js v16
 export const CONFIG = {
   halls: ['Gourmet', 'Menor'],
   firebaseConfig: {
