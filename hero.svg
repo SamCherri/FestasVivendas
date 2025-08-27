@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 110">
   <defs>
     <linearGradient id="g" x1="0" x2="1">
-      <stop offset="0" stop-color="#0B74B8"/><stop offset="1" stop-color="#18c07a"/>
+      <stop offset="0" stop-color="#0B74B8"/>
+      <stop offset="1" stop-color="#18c07a"/>
     </linearGradient>
   </defs>
-  <rect width="320" height="120" rx="16" fill="url(#g)" opacity=".15"/>
-  <text x="20" y="68" fill="#0B74B8" font-family="system-ui,Segoe UI,Roboto,Inter,Arial" font-size="22" font-weight="700">
-    Vivendas de La Salle
-  </text>
+  <rect width="320" height="110" rx="16" fill="url(#g)" opacity=".22"/>
+  <path d="M0,70 Q80,40 160,70 T320,70 L320,110 L0,110 Z" fill="url(#g)" opacity=".45"/>
+  <circle cx="50" cy="38" r="18" fill="#fff" opacity=".25"/>
+  <path d="M50 22l3.5 8.6 9.3.6-7.2 5.8 2.3 8.9-7.9-5-7.9 5 2.3-8.9-7.2-5.8 9.3-.6L50 22z" fill="#fff" opacity=".9"/>
 </svg>
