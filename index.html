@@ -8,10 +8,8 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0B74B8" />
-  <link rel="stylesheet" href="style.css?v=19" />
-  <!-- Garante que qualquer [hidden] esteja realmente invisível -->
+  <link rel="stylesheet" href="style.css?v=23" />
   <style>[hidden]{display:none!important}</style>
-  <script defer src="config.js?v=19" type="module"></script>
 </head>
 <body>
   <header class="topbar" role="banner">
@@ -160,10 +158,7 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <!-- Firebase ES Modules (CDN) + App -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=19"></script>
+  <!-- Somente o app: ele já importa Firebase e config.js -->
+  <script type="module" src="app.js?v=23"></script>
 </body>
 </html>
