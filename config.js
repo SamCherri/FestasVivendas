@@ -1,13 +1,12 @@
-// config.js v28 — preencha com os dados do Firebase (Project settings → Web app)
+// config.js
 export const CONFIG = {
   firebaseConfig: {
-    apiKey: "COPIE_DA_TELA_DO_FIREBASE",
-    authDomain: "SEU-PROJETO.firebaseapp.com",
-    projectId: "SEU-PROJETO",
-    storageBucket: "SEU-PROJETO.appspot.com",
-    messagingSenderId: "NUMERO",
-    appId: "APP_ID",
-    measurementId: "G-XXXXXXXXXX"
+    apiKey: "AIzaSyDSMebVZ-n10W3GydnycJ0HcWLWlnkw4",
+    authDomain: "festavivendas.firebaseapp.com",
+    projectId: "festavivendas",
+    storageBucket: "festavivendas.appspot.com",
+    messagingSenderId: "72298393574",
+    appId: "1:72298393574:web:cb8e7da44fb43a87e4ac77"
   },
   halls: ["Gourmet", "Menor"],
   brand: {
