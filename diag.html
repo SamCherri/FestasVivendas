@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8">
+<title>Diag Firebase</title>
+<script type="module">
+import { CONFIG } from './config.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const log = m => { const p=document.createElement('pre'); p.textContent = m; document.body.appendChild(p); }
+
+try{
+  log('Inicializando…');
+  const app = initializeApp(CONFIG.firebaseConfig);
+  log('App OK: '+app.name);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  log('Tentando listar /festas…');
+  const snap = await getDocs(collection(db,'festas'));
+  log('Firestore OK. Docs: '+snap.size);
+
+  log('Teste login (se quiser): edite email/senha abaixo e recarregue:');
+  const EMAIL = ""; const PASS = "";
+  if(EMAIL && PASS){
+    await signInWithEmailAndPassword(auth, EMAIL, PASS);
+    log('Auth OK: '+auth.currentUser.email);
+  } else {
+    log('(Pulando teste de login)');
+  }
+}catch(e){ log('ERRO: '+(e.code||e.message)); console.error(e); }
+</script>
