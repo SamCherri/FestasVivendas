@@ -5,19 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
-  <meta name="theme-color" content="#0B74B8" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="style.css?v=30" />
+  <meta name="theme-color" content="#0B74B8" />
+
+  <!-- Forçar a não cachear -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <link rel="stylesheet" href="style.css?v=28" />
   <style>[hidden]{display:none!important}</style>
-  <script type="module" src="config.js?v=30"></script>
+
+  <!-- Importa sempre versão nova -->
+  <script>
+    const v = Date.now();
+    document.write(`<script type="module" src="config.js?v=${v}"><\/script>`);
+    document.write(`<script type="module" src="app.js?v=${v}"><\/script>`);
+  </script>
 </head>
 <body>
-  <header class="topbar" role="banner">
+  <header class="topbar">
     <div class="brand">
-      <img src="favicon.svg" alt="" width="22" height="22" />
+      <img src="favicon.svg" alt="" width="24" height="24" />
       <span>Vivendas de La Salle — Festas</span>
     </div>
-    <nav id="nav-actions" hidden class="actions" aria-label="Ações">
+    <nav id="nav-actions" hidden class="actions">
       <button id="btn-new" class="btn primary">Nova Festa</button>
       <button id="btn-export" class="btn ghost">JSON</button>
       <button id="btn-export-csv" class="btn ghost">CSV</button>
@@ -28,125 +40,91 @@
 
   <main class="container">
     <!-- LOGIN -->
-    <section id="login-section" class="card max-420" aria-labelledby="login-title">
-      <h1 id="login-title">Acesso interno</h1>
-      <p class="muted">Entre com e-mail e senha cadastrados no Firebase.</p>
-      <form id="login-form" class="form" novalidate>
+    <section id="login-section" class="card center-v">
+      <h1>Acesso interno</h1>
+      <form id="login-form" class="form">
         <label>E-mail
-          <input name="email" type="email" required autocomplete="username" inputmode="email" placeholder="ex: zelador@vivendas.com">
+          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
         </label>
         <label>Senha
-          <input name="password" type="password" required autocomplete="current-password" minlength="6" placeholder="••••••••">
+          <input type="password" name="password" required minlength="6" placeholder="••••••••">
         </label>
-        <button id="btn-login" class="btn primary" type="submit">Entrar</button>
+        <button class="btn primary" id="btn-login">Entrar</button>
       </form>
-      <p class="muted tiny">Se não conseguir, verifique com a administração.</p>
+      <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
 
-    <!-- APLICATIVO -->
+    <!-- APP -->
     <section id="app-section" hidden>
+      <h2 class="visually-hidden">Painel</h2>
       <section class="metrics">
-        <div class="metric"><div class="k">Hoje</div><div id="kpi-today" class="v">0</div></div>
-        <div class="metric"><div class="k">Próx. 4 semanas</div><div id="kpi-upcoming" class="v">0</div></div>
-        <div class="metric"><div class="k">Convidados</div><div id="kpi-guests" class="v">0</div></div>
+        <div class="metric-card"><div class="metric-k">Hoje</div><div class="metric-v" id="kpi-today">0</div></div>
+        <div class="metric-card"><div class="metric-k">Próx. 4 semanas</div><div class="metric-v" id="kpi-upcoming">0</div></div>
+        <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
 
       <section class="card calendar">
         <header class="cal-header">
-          <button id="cal-prev" class="btn" aria-label="Mês anterior">◀</button>
+          <button id="cal-prev" class="btn">◀</button>
           <div id="cal-title" class="cal-title">Mês Ano</div>
-          <button id="cal-next" class="btn" aria-label="Próximo mês">▶</button>
+          <button id="cal-next" class="btn">▶</button>
         </header>
-        <div id="cal-grid" class="cal-grid" aria-live="polite"></div>
-        <footer class="cal-legend">
-          <span class="dot dot-has"></span> Dia com festa
-          <span class="dot dot-today"></span> Hoje
-        </footer>
+        <div id="cal-grid" class="cal-grid"></div>
       </section>
 
-      <div class="toolbar card">
-        <form id="filters" class="filters">
-          <label>Data <input type="date" name="date"></label>
-          <label>Salão
-            <select name="hall"><option value="">Todos</option></select>
-          </label>
-          <button class="btn">Filtrar</button>
-          <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
-        </form>
-      </div>
+      <form id="filters" class="filters card">
+        <label>Data <input type="date" name="date"></label>
+        <label>Salão <select name="hall"><option value="">Todos</option></select></label>
+        <button type="submit" class="btn">Filtrar</button>
+        <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
+      </form>
 
-      <div id="cards" class="cards" aria-live="polite"></div>
-      <p id="empty-msg" class="muted center" hidden>Nenhuma festa.</p>
+      <div id="cards" class="cards"></div>
+      <p id="empty-msg" class="muted center" hidden>Nenhum registro.</p>
       <p id="loading-msg" class="muted center">Carregando…</p>
 
       <div class="card table-wrapper">
         <table class="table">
-          <thead><tr>
-            <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
-            <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
-          </tr></thead>
+          <thead>
+            <tr><th>Data</th><th>Início</th><th>Término</th><th>Salão</th><th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th></tr>
+          </thead>
           <tbody id="tbody-parties"></tbody>
         </table>
       </div>
     </section>
 
-    <!-- DIALOG: NOVA/EDITAR -->
-    <dialog id="party-dialog">
-      <form id="party-form" method="dialog" class="form" novalidate>
-        <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
-        <div class="grid two">
-          <label>Data <input name="date" type="date" required></label>
-          <label>Salão <select name="hall" required></select></label>
-          <label>Início <input name="start_time" type="time" required></label>
-          <label>Término <input name="end_time" type="time"></label>
+    <dialog id="party-dialog"><form id="party-form" class="form">
+      <header><h3 id="dialog-title">Nova Festa</h3></header>
+      <div class="grid two">
+        <label>Data <input type="date" name="date" required></label>
+        <label>Salão <select name="hall" required></select></label>
+        <label>Início <input type="time" name="start_time" required></label>
+        <label>Término <input type="time" name="end_time"></label>
+      </div>
+      <fieldset><legend>Materiais</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="cups" min="0"></label>
+          <label>Garfos <input type="number" name="forks" min="0"></label>
+          <label>Facas <input type="number" name="knives" min="0"></label>
+          <label>Colheres <input type="number" name="spoons" min="0"></label>
+          <label>Pratos <input type="number" name="plates" min="0"></label>
         </div>
-        <fieldset class="materials">
-          <legend>Materiais</legend>
-          <div class="grid five">
-            <label>Copos <input name="cups" type="number" min="0" value="0"></label>
-            <label>Garfos <input name="forks" type="number" min="0" value="0"></label>
-            <label>Facas <input name="knives" type="number" min="0" value="0"></label>
-            <label>Colheres <input name="spoons" type="number" min="0" value="0"></label>
-            <label>Pratos <input name="plates" type="number" min="0" value="0"></label>
-          </div>
-        </fieldset>
-        <div class="grid two">
-          <label>Apartamento <input name="apartment" required placeholder="ex: 133"></label>
-          <label>Morador <input name="resident_name" required></label>
-        </div>
-        <label>Convidados (um por linha)
-          <textarea name="guests_text" rows="4" placeholder="Nome 1&#10;Nome 2"></textarea>
-        </label>
-        <menu class="dialog-actions">
-          <button id="btn-cancel" value="cancel" class="btn">Cancelar</button>
-          <button id="btn-save" value="default" class="btn primary">Salvar</button>
-        </menu>
-      </form>
-    </dialog>
+      </fieldset>
+      <div class="grid two">
+        <label>Apto <input type="text" name="apartment" required></label>
+        <label>Morador <input type="text" name="resident_name" required></label>
+      </div>
+      <label>Convidados <textarea name="guests_text" rows="5"></textarea></label>
+      <menu><button id="btn-cancel" class="btn">Cancelar</button><button id="btn-save" class="btn primary">Salvar</button></menu>
+    </form></dialog>
 
-    <!-- DIALOG: VER -->
-    <dialog id="view-dialog">
-      <article class="view-card">
-        <header class="dialog-header"><h3>Detalhes da festa</h3></header>
-        <div id="view-content" class="view-content"></div>
-        <menu class="dialog-actions">
-          <button id="btn-close-view" class="btn">Fechar</button>
-        </menu>
-      </article>
-    </dialog>
+    <dialog id="view-dialog"><div id="view-content"></div><menu><button id="btn-close-view" class="btn">Fechar</button></menu></dialog>
 
-    <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
-
+    <button id="fab-new" class="fab" hidden>＋</button>
     <div id="toast" class="toast" hidden></div>
     <div id="errbox" class="errbox" hidden></div>
   </main>
 
-  <footer class="footer"><small>Uso interno — Firebase Auth + Firestore.</small></footer>
-
-  <!-- Firebase ES Modules (CDN) + App -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
-  <script type="module" src="app.js?v=30"></script>
+  <footer class="footer"><small>Uso interno — Firebase.</small></footer>
 </body>
 </html>
