@@ -2,76 +2,91 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
-  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="manifest" href="manifest.webmanifest?v=28" />
   <meta name="theme-color" content="#0B74B8" />
+
+  <!-- Ícones / PWA -->
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <!-- CSS principal -->
   <link rel="stylesheet" href="style.css?v=28" />
+  <!-- Garante que qualquer [hidden] esteja invisível -->
   <style>[hidden]{display:none!important}</style>
+
+  <!-- Config (precisa vir antes do app.js) -->
   <script type="module" src="config.js?v=28"></script>
 </head>
 <body>
+  <!-- Topbar -->
   <header class="topbar" role="banner">
     <div class="brand">
-      <img src="favicon.svg" alt="Logo Vivendas de La Salle" width="24" height="24" />
-      <span class="brand-title">Vivendas de La Salle — Festas</span>
+      <img src="favicon.svg" alt="" width="22" height="22" />
+      <span>Vivendas de La Salle — Festas</span>
     </div>
-    <nav id="nav-actions" hidden class="actions" aria-label="Ações principais">
+
+    <!-- Navegação/ações: começam ocultas até autenticar -->
+    <nav id="nav-actions" class="actions" hidden aria-label="Ações principais">
       <button id="btn-new" class="btn primary">Nova Festa</button>
-      <button id="btn-export" class="btn ghost">JSON</button>
-      <button id="btn-export-csv" class="btn ghost">CSV</button>
+      <button id="btn-export" class="btn ghost" aria-label="Exportar JSON">JSON</button>
+      <button id="btn-export-csv" class="btn ghost" aria-label="Exportar CSV">CSV</button>
       <span id="current-user" class="user" aria-live="polite"></span>
-      <button id="btn-logout" class="btn link">Sair</button>
+      <button id="btn-logout" class="btn link" aria-label="Sair">Sair</button>
     </nav>
   </header>
 
+  <!-- Hero simples (pode trocar a arte) -->
   <section class="hero" aria-hidden="true">
     <img src="hero.svg" alt="" />
   </section>
 
   <main class="container" role="main">
     <!-- LOGIN -->
-    <section id="login-section" class="card max-520 center-v" aria-labelledby="login-title">
+    <section id="login-section" class="card max-480 center-v" aria-labelledby="login-title">
       <h1 id="login-title">Acesso interno</h1>
-      <p class="muted">Entre com e-mail e senha cadastrados.</p>
+      <p class="muted">Entre com e-mail e senha cadastrados no Firebase.</p>
+
       <form id="login-form" class="form" novalidate>
         <label>E-mail
           <input name="email" type="email" required autocomplete="username" inputmode="email" placeholder="ex: zelador@vivendas.com">
         </label>
         <label>Senha
-          <input type="password" name="password" required autocomplete="current-password" minlength="6" placeholder="••••••">
+          <input type="password" name="password" required autocomplete="current-password" minlength="6" placeholder="••••••••">
         </label>
-        <button class="btn primary xl" type="submit" id="btn-login">Entrar</button>
+        <button class="btn primary" type="submit" id="btn-login">Entrar</button>
       </form>
-      <p class="muted tiny">Esqueceu o acesso? Contate a administração.</p>
+
+      <p class="muted tiny">Problemas de acesso? Contate a administração.</p>
     </section>
 
-    <!-- APP -->
+    <!-- APP (oculto até logar) -->
     <section id="app-section" hidden aria-labelledby="app-title">
       <h2 id="app-title" class="visually-hidden">Painel</h2>
 
+      <!-- KPIs -->
       <section class="metrics" aria-label="Indicadores">
         <div class="metric-card"><div class="metric-k">Hoje</div><div class="metric-v" id="kpi-today">0</div></div>
         <div class="metric-card"><div class="metric-k">Próx. 4 semanas</div><div class="metric-v" id="kpi-upcoming">0</div></div>
         <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
       </section>
 
-      <!-- CALENDÁRIO -->
+      <!-- CALENDÁRIO MENSAL -->
       <section class="card calendar" role="region" aria-label="Calendário mensal">
         <header class="cal-header">
-          <button id="cal-prev" class="btn icon" aria-label="Mês anterior">◀</button>
+          <button id="cal-prev" class="btn" aria-label="Mês anterior">◀</button>
           <div class="cal-title" id="cal-title">Mês Ano</div>
-          <button id="cal-next" class="btn icon" aria-label="Próximo mês">▶</button>
+          <button id="cal-next" class="btn" aria-label="Próximo mês">▶</button>
         </header>
         <div class="cal-grid" id="cal-grid" aria-live="polite"></div>
         <footer class="cal-legend">
-          <span class="dot dot-has"></span> Dia com festa
-          <span class="dot dot-today"></span> Hoje
+          <span class="dot dot-has" aria-hidden="true"></span> Dia com festa
+          <span class="dot dot-today" aria-hidden="true"></span> Hoje
         </footer>
       </section>
 
+      <!-- FILTROS -->
       <div class="toolbar card" role="region" aria-label="Filtros">
         <form id="filters" class="filters">
           <label>Data <input type="date" name="date" aria-label="Filtrar por data"></label>
@@ -80,15 +95,17 @@
               <option value="">Todos</option>
             </select>
           </label>
-          <button type="submit" class="btn">Filtrar</button>
-          <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
+          <button type="submit" class="btn" aria-label="Aplicar filtros">Filtrar</button>
+          <button type="button" id="btn-clear-filters" class="btn link" aria-label="Limpar filtros">Limpar</button>
         </form>
       </div>
 
+      <!-- CARDS -->
       <div id="cards" class="cards" aria-live="polite"></div>
       <p id="empty-msg" class="muted center" hidden>Nenhum registro.</p>
       <p id="loading-msg" class="muted center">Carregando…</p>
 
+      <!-- TABELA -->
       <div class="card table-wrapper" role="region" aria-label="Tabela de festas">
         <table class="table" aria-label="Festas">
           <thead>
@@ -106,12 +123,14 @@
     <dialog id="party-dialog" aria-labelledby="dialog-title">
       <form method="dialog" id="party-form" class="form" novalidate>
         <header class="dialog-header"><h3 id="dialog-title">Nova Festa</h3></header>
+
         <div class="grid two">
           <label>Data <input type="date" name="date" required></label>
           <label>Salão <select name="hall" required></select></label>
           <label>Início <input type="time" name="start_time" required></label>
           <label>Término <input type="time" name="end_time"></label>
         </div>
+
         <fieldset class="materials">
           <legend>Materiais</legend>
           <div class="grid five">
@@ -122,13 +141,16 @@
             <label>Pratos <input type="number" name="plates" min="0" value="0" inputmode="numeric"></label>
           </div>
         </fieldset>
+
         <div class="grid two">
           <label>Apartamento <input type="text" name="apartment" required placeholder="ex: Bloco B, 304"></label>
           <label>Morador <input type="text" name="resident_name" required></label>
         </div>
+
         <label>Lista de convidados (um por linha)
           <textarea name="guests_text" rows="6" placeholder="Nome 1&#10;Nome 2&#10;..."></textarea>
         </label>
+
         <menu class="dialog-actions">
           <button value="cancel" class="btn" id="btn-cancel">Cancelar</button>
           <button id="btn-save" value="default" class="btn primary">Salvar</button>
@@ -147,6 +169,7 @@
       </article>
     </dialog>
 
+    <!-- FAB: oculto até logar -->
     <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
 
     <div id="toast" class="toast" hidden aria-live="polite"></div>
@@ -157,10 +180,7 @@
     <small>Uso interno — Autenticação e dados no Firebase.</small>
   </footer>
 
-  <!-- Firebase ES Modules + App -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"></script>
+  <!-- Firebase ES Modules serão importados DENTRO do app.js -->
   <script type="module" src="app.js?v=28"></script>
 </body>
 </html>
