@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auth Check</title>
+<link rel="stylesheet" href="style.css?v=30">
+<style>body{max-width:720px;margin:20px auto;padding:0 12px}</style>
+<section class="card">
+  <h1>Auth Check</h1>
+  <p class="muted">Este teste usa o <code>config.js</code> publicado.</p>
+  <form id="f" class="form">
+    <label>Email <input name="email" type="email" required value="zelador@vivendas.com"></label>
+    <label>Senha <input name="password" type="password" required></label>
+    <button class="btn primary">Entrar</button>
+  </form>
+  <h3>Config detectada</h3>
+  <pre id="cfg" class="card"></pre>
+  <h3>Resultado</h3>
+  <pre id="out" class="card"></pre>
+</section>
+<script type="module">
+  import { CONFIG } from './config.js?v=30';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  document.getElementById('cfg').textContent = JSON.stringify(CONFIG.firebaseConfig, null, 2);
+  const app = initializeApp(CONFIG.firebaseConfig);
+  const auth = getAuth(app);
+  document.getElementById('f').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd=new FormData(e.target);
+    try{
+      const cred=await signInWithEmailAndPassword(auth, String(fd.get('email')), String(fd.get('password')));
+      document.getElementById('out').textContent = 'OK: ' + cred.user.email;
+    }catch(err){ document.getElementById('out').textContent = 'ERRO:\n' + 'code: ' + err.code + '\nmessage: ' + err.message; }
+  });
+</script>
