@@ -1,51 +1,49 @@
 <!doctype html>
+<html lang="pt-br">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Auth Check</title>
-<link rel="icon" href="data:,">
 <style>
-  body { font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:20px; }
-  label{display:block;margin:8px 0}
-  input,button{font:inherit;padding:.6rem .8rem}
-  #out{margin-top:1rem; padding:.8rem; background:#f6f8fa; border:1px solid #e1e4e8; white-space:pre-wrap}
+  body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;padding:16px}
+  input,button{font:inherit;padding:.6rem .8rem;margin:.25rem 0}
+  pre{white-space:pre-wrap;background:#111;color:#0f0;padding:12px;border-radius:8px}
+  .err{color:#b00020}
 </style>
 
 <h1>Auth Check</h1>
-<p>Este teste usa o <code>config.js</code> do seu projeto atual e mostra na tela qualquer erro do Firebase Auth.</p>
+<p>Este teste usa o <code>config.js</code> do projeto publicado.</p>
 
-<form id="f">
-  <label>Email <input name="email" type="email" required></label>
-  <label>Senha <input name="password" type="password" required minlength="6"></label>
-  <button>Entrar</button>
-</form>
+<label>Email<br><input id="email" type="email" value="zelador@vivendas.com"></label><br>
+<label>Senha<br><input id="pass" type="password" value="12345678"></label><br>
+<button id="go">Entrar</button>
 
-<pre id="out">Aguardando…</pre>
+<h3>Config detectada</h3>
+<pre id="cfg"></pre>
+
+<h3>Resultado</h3>
+<pre id="out"></pre>
 
 <script type="module">
-  import { CONFIG } from './config.js?v=authcheck';
+  import { CONFIG } from './config.js?v=27';
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-  const out = (msg) => document.getElementById('out').textContent = msg;
-
-  out("CONFIG carregado:\n" + JSON.stringify(CONFIG.firebaseConfig, null, 2));
+  document.getElementById('cfg').textContent = JSON.stringify(CONFIG.firebaseConfig, null, 2);
 
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
-  onAuthStateChanged(auth, (user) => {
-    if (user) out("OK! onAuthStateChanged => " + user.email);
-  });
 
-  document.getElementById('f').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const email = fd.get('email'); const password = fd.get('password');
-    out("Tentando signInWithEmailAndPassword…");
+  document.getElementById('go').onclick = async ()=>{
+    const email = document.getElementById('email').value.trim();
+    const pass  = document.getElementById('pass').value;
+    const outEl = document.getElementById('out');
+    outEl.textContent = '...';
     try{
-      await signInWithEmailAndPassword(auth, email, password);
-      out("Login OK (aguarde onAuthStateChanged)"); 
-    }catch(err){
-      out("ERRO:\ncode: " + err.code + "\nmessage: " + err.message);
+      const { user } = await signInWithEmailAndPassword(auth, email, pass);
+      outEl.textContent = 'OK: ' + user.email;
+    }catch(e){
+      outEl.textContent = 'ERRO:\n' + 'code: ' + e.code + '\nmessage: ' + e.message;
     }
-  });
+  };
 </script>
+</html>
