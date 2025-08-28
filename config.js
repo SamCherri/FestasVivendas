@@ -1,18 +1,18 @@
-// config.js v26
+// config.js atualizado
 export const CONFIG = {
   firebaseConfig: {
-    apiKey: "AIzaSyB3PHKo18JjC6M-MJLsE431yxHnAZhWdzo",
-    authDomain: "festasvivendas.firebaseapp.com",
-    projectId: "festasvivendas",
-    storageBucket: "festasvivendas.appspot.com", // <- correto
-    messagingSenderId: "460753271698",
-    appId: "1:460753271698:web:984421ed1040d00c2a1f4b",
-    measurementId: "G-4ZN38WR16K"
+    apiKey: "AIzaSyDsMEbeVz-niQVM3GydnycJ0HcvLWNikw4",
+    authDomain: "festavivendas.firebaseapp.com",
+    projectId: "festavivendas",
+    storageBucket: "festavivendas.firebasestorage.app",
+    messagingSenderId: "722983983574",
+    appId: "1:722983983574:web:cb8e7da44fb43a87e4ac77"
+    // measurementId não veio, então pode deixar sem
   },
   halls: ["Gourmet", "Menor"],
   brand: {
     name: "Vivendas de La Salle",
     primary: "#0B74B8",
-    secondary: "#18C07A"
+    secondary: "#18c07a"
   }
 };
