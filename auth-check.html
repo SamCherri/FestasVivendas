@@ -1,0 +1,51 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auth Check</title>
+<link rel="icon" href="data:,">
+<style>
+  body { font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:20px; }
+  label{display:block;margin:8px 0}
+  input,button{font:inherit;padding:.6rem .8rem}
+  #out{margin-top:1rem; padding:.8rem; background:#f6f8fa; border:1px solid #e1e4e8; white-space:pre-wrap}
+</style>
+
+<h1>Auth Check</h1>
+<p>Este teste usa o <code>config.js</code> do seu projeto atual e mostra na tela qualquer erro do Firebase Auth.</p>
+
+<form id="f">
+  <label>Email <input name="email" type="email" required></label>
+  <label>Senha <input name="password" type="password" required minlength="6"></label>
+  <button>Entrar</button>
+</form>
+
+<pre id="out">Aguardando…</pre>
+
+<script type="module">
+  import { CONFIG } from './config.js?v=authcheck';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+  const out = (msg) => document.getElementById('out').textContent = msg;
+
+  out("CONFIG carregado:\n" + JSON.stringify(CONFIG.firebaseConfig, null, 2));
+
+  const app = initializeApp(CONFIG.firebaseConfig);
+  const auth = getAuth(app);
+  onAuthStateChanged(auth, (user) => {
+    if (user) out("OK! onAuthStateChanged => " + user.email);
+  });
+
+  document.getElementById('f').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const email = fd.get('email'); const password = fd.get('password');
+    out("Tentando signInWithEmailAndPassword…");
+    try{
+      await signInWithEmailAndPassword(auth, email, password);
+      out("Login OK (aguarde onAuthStateChanged)"); 
+    }catch(err){
+      out("ERRO:\ncode: " + err.code + "\nmessage: " + err.message);
+    }
+  });
+</script>
