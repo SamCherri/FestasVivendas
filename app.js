@@ -1,44 +1,28 @@
-// app.js v26 — login por click, mensagens de erro visíveis, Firestore offline
+// app.js v28 — Auth + Firestore + Calendário acessível
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import {
-  getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc,
-  enableIndexedDbPersistence, query, orderBy, startAt, endAt
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, getDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 (function(){
   'use strict';
-
-  // —— Diagnóstico de JS (se algo quebrar, aparece na tela)
-  window.addEventListener('error', e=>{
-    const el = document.getElementById('errbox');
-    if (el) { el.hidden=false; el.textContent = 'JS error: ' + (e?.message||''); }
-  });
-  window.addEventListener('unhandledrejection', e=>{
-    const el = document.getElementById('errbox');
-    if (el) { el.hidden=false; el.textContent = 'Promise error: ' + (e?.reason?.message||''); }
-  });
-
-  // Helpers UI
   const $=(s,el=document)=>el.querySelector(s);
   const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
-  const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,2000);};
-  const showErr=(m)=>{const el=$('#errbox'); if(!el) return; el.textContent=String(m||'Erro'); el.hidden=false;};
-  const hideErr=()=>{const el=$('#errbox'); if(el) el.hidden=true;};
+  const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;setTimeout(()=>t.hidden=true,2200);};
+  const showErr=(m)=>{const el=$('#errbox'); el.textContent=String(m||'Erro'); el.hidden=false;};
+  const hideErr=()=>{const el=$('#errbox'); el.hidden=true;};
   const fmtDate=(d)=>{try{if(typeof d==='string')return d;return d.toISOString().slice(0,10);}catch{return '';}};
   const parseTime=(str)=>{if(!str)return null;const [h,m]=str.split(':').map(Number);return h*60+m;};
   const mats=(r)=>`copos ${r.cups||0}, garfos ${r.forks||0}, facas ${r.knives||0}, colheres ${r.spoons||0}, pratos ${r.plates||0}`;
   const byDateTime=(a,b)=> (a.date===b.date? (b.start_time||'').localeCompare(a.start_time||'') : (a.date>b.date?-1:1));
   const slug=(s)=> String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-_]/gi,'').toLowerCase();
-  const escapeHTML=(s)=> String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 
   // Firebase
   const app = initializeApp(CONFIG.firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  enableIndexedDbPersistence(db).catch(()=>{ /* ignore multi-tab */ });
   const festasCol = collection(db, 'festas');
 
   // Estado/UI
@@ -63,24 +47,13 @@ import {
   navActions.hidden = true; fab.hidden = true; appSection.hidden = true;
 
   function setLoading(flag){ loading=!!flag; loadingMsg.hidden=!loading; }
-  function rangeISO() {
-    const pad = n => String(n).padStart(2,'0');
-    const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const now = new Date();
-    const from = new Date(now); from.setDate(from.getDate()-60);
-    const to   = new Date(now); to.setDate(to.getDate()+90);
-    return [iso(from), iso(to)];
-  }
-
   async function reloadAll(){
     setLoading(true); hideErr();
     try{
-      const [from,to] = rangeISO();
-      const q = query(festasCol, orderBy('date'), startAt(from), endAt(to));
-      const snap = await getDocs(q);
+      const snap = await getDocs(festasCol);
       CACHE = snap.docs.map(d => ({ id:d.id, ...d.data() }));
       render();
-    }catch(err){ console.error(err); showErr('Falha ao carregar dados: ' + humanizeFirebaseError(err)); }
+    }catch(err){ console.error(err); showErr('Falha ao carregar: ' + humanizeFirebaseError(err)); }
     finally{ setLoading(false); }
   }
   const getAll = ()=> CACHE.slice();
@@ -89,6 +62,7 @@ import {
     filterHallSel.innerHTML = '<option value="">Todos</option>' + CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
     formHallSel.innerHTML   = CONFIG.halls.map(h=>`<option value="${h}">${h}</option>`).join('');
   }
+
   function filtered(rows){
     return rows.filter(r=>{
       if(state.filterDate && r.date!==state.filterDate) return false;
@@ -112,24 +86,24 @@ import {
     kGuests.textContent = all.reduce((s,r)=> s + ((r.guests_text||'').split(/\n+/).filter(Boolean).length||0), 0);
   }
 
-  // Calendário
+  // ===== Calendário =====
   function monthInfo(d){
     const y=d.getFullYear(), m=d.getMonth();
     const first=new Date(y,m,1);
     const last=new Date(y,m+1,0);
-    const startDow = (first.getDay()+6)%7;
+    const startDow = (first.getDay()+6)%7; // segunda
     return { y, m, days:last.getDate(), startDow };
   }
+  const dow = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   function fmtMonthTitle(d){
-    return d.toLocaleDateString('pt-BR', { month:'long', year:'numeric' })
-            .replace(/^./, c=>c.toUpperCase());
+    return d.toLocaleDateString('pt-BR', { month:'long', year:'numeric' }).replace(/^./, c=>c.toUpperCase());
   }
   function renderCalendar(){
-    const {y,m,startDow} = monthInfo(calCursor);
+    const {y,m,days,startDow} = monthInfo(calCursor);
     calTitle.textContent = fmtMonthTitle(calCursor);
     const todayStr = fmtDate(new Date());
     const counts = getAll().reduce((acc,r)=>{ acc[r.date]=(acc[r.date]||0)+1; return acc; }, {});
-    const dow = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+
     calGrid.innerHTML = dow.map(d=>`<div class="cal-dow">${d}</div>`).join('');
     const cells = [];
     const prevDays = startDow;
@@ -144,15 +118,17 @@ import {
       const classes = ['cal-cell']; if(!inMonth) classes.push('cal-out'); if(isToday) classes.push('cal-today');
       cells.push(`
         <div class="${classes.join(' ')}">
-          <button class="cal-hit ${has?'hasEvent':''}" data-date="${ds}" ${inMonth?'':'data-out="1"'} aria-label="Dia ${ds}">
+          <button class="cal-hit ${has?'has':''}" data-date="${ds}" ${inMonth?'':'data-out="1"'} aria-label="Dia ${ds}${has?' com festa':''}">
             <div class="cal-date">${String(d.getDate()).padStart(2,'0')}</div>
-            <div class="cal-badges"></div>
+            <div class="cal-badges">${has?'<span class="dot dot-has" aria-hidden="true"></span>':''}</div>
           </button>
         </div>`);
     }
     calGrid.insertAdjacentHTML('beforeend', cells.join(''));
-    let pressTimer=null;
+
+    // clicks
     calGrid.querySelectorAll('.cal-hit').forEach(btn=>{
+      let pressTimer=null;
       btn.addEventListener('click', (e)=>{
         const date = e.currentTarget.dataset.date;
         state.filterDate = date;
@@ -172,26 +148,29 @@ import {
         pressTimer = setTimeout(()=>{ openCreateWithDate(date); }, 700);
       }, {passive:true});
     });
+
     calPrev.onclick = ()=>{ calCursor = new Date(y, m-1, 1); renderCalendar(); };
     calNext.onclick = ()=>{ calCursor = new Date(y, m+1, 1); renderCalendar(); };
   }
   function openCreateWithDate(dateStr){ openCreate(); $('#party-form [name="date"]').value = dateStr; }
+  // ===== fim calendário =====
 
-  // Cards/Tabela
+  const chipsHTML = r => [`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`]
+    .map(x=>`<span class="chip">${x}</span>`).join('');
+
   function cardHTML(r){
-    const chips=[`Copos ${r.cups||0}`,`Garfos ${r.forks||0}`,`Facas ${r.knives||0}`,`Colheres ${r.spoons||0}`,`Pratos ${r.plates||0}`].map(x=>`<span class="chip">${x}</span>`).join('');
     return `
       <article class="party-card" data-id="${r.id}">
         <div class="party-head"><strong>${r.date} • ${r.start_time||''}${r.end_time?'–'+r.end_time:''}</strong><span class="badge">${r.hall}</span></div>
         <div class="kv"><span>Apto</span><span>${escapeHTML(r.apartment)}</span></div>
         <div class="kv"><span>Morador</span><span>${escapeHTML(r.resident_name)}</span></div>
-        <div class="mats">${chips}</div>
+        <div class="mats">${chipsHTML(r)}</div>
         <div class="row-actions">
-          <button class="btn primary" data-act="edit" aria-label="Editar">Editar</button>
-          <button class="btn primary" data-act="view" aria-label="Ver detalhes">Ver</button>
-          <button class="btn" data-act="dup"  aria-label="Duplicar">Duplicar</button>
-          <button class="btn" data-act="ics"  aria-label="Baixar ICS">ICS</button>
-          <button class="btn danger" data-act="del" aria-label="Excluir">Excluir</button>
+          <button class="btn primary" data-act="edit">Editar</button>
+          <button class="btn primary" data-act="view">Ver</button>
+          <button class="btn" data-act="dup">Duplicar</button>
+          <button class="btn" data-act="ics">ICS</button>
+          <button class="btn danger" data-act="del">Excluir</button>
         </div>
       </article>`;
   }
@@ -228,7 +207,6 @@ import {
     $$('[data-act="del"]',tbody).forEach(b=>b.addEventListener('click',()=>del(b.dataset.id)));
   }
 
-  // Form
   function getForm(){
     const fd=new FormData(form);
     const o={
@@ -255,6 +233,7 @@ import {
     return o;
   }
   function err(m){ showErr(m); return null; }
+
   function composeId(p){ return `${p.date}_${slug(p.hall)}_${(p.start_time||'').replace(':','')}`; }
 
   function openCreate(){
@@ -305,7 +284,10 @@ import {
       btnSave.disabled=true; btnSave.textContent = isEdit ? 'Salvando…' : 'Criando…';
       if(!isEdit){
         const exists = await getDoc(doc(festasCol, id));
-        if(exists.exists()){ showErr('Já existe uma festa para este salão, data e horário.'); btnSave.disabled=false; btnSave.textContent='Salvar'; return; }
+        if(exists.exists()){
+          showErr('Já existe uma festa para este salão, data e horário.');
+          btnSave.disabled=false; btnSave.textContent='Salvar'; return;
+        }
       }
       await setDoc(doc(festasCol, id), p);
       $('#party-dialog').close(); await reloadAll(); toast(isEdit?'Festa atualizada.':'Festa criada.');
@@ -345,7 +327,7 @@ import {
     });
     $('#btn-clear-filters').addEventListener('click', ()=>{ $('#filters').reset(); state.filterDate=''; state.filterHall=''; render(); });
 
-    $('#btn-new').addEventListener('click', openCreate);
+    btnNew.addEventListener('click', openCreate);
     fab.addEventListener('click', openCreate);
 
     btnExport.addEventListener('click', ()=>{
@@ -369,21 +351,50 @@ import {
     $('#btn-close-view').addEventListener('click', ()=>$('#view-dialog').close());
   }
 
-  // Auth
+  // controle por autenticação
   function applyAuth(user){
     const logged = !!user;
     loginSection.hidden = logged;
     appSection.hidden = !logged;
     navActions.hidden = !logged;
     fab.hidden = !logged;
-    currentUser.textContent = logged ? (user.email || '') : '';
+    currentUser.textContent = logged ? user.email : '';
     if (logged) hideErr();
   }
-  function readableAuthError(err){
+
+  function initAuth(){
+    onAuthStateChanged(auth, async (user)=>{
+      applyAuth(user);
+      if(user){ buildHallSelects(); await reloadAll(); toast('Login efetuado.'); }
+    });
+    loginForm.addEventListener('submit', async (e)=>{
+      e.preventDefault(); hideErr();
+      const fd=new FormData(e.target);
+      const email=(fd.get('email')||'').toString().trim();
+      const password=(fd.get('password')||'').toString();
+      try{
+        btnLogin.disabled=true; btnLogin.textContent='Entrando…';
+        await signInWithEmailAndPassword(auth, email, password);
+      }catch(err){
+        console.error(err); showErr('Falha no login: ' + humanizeFirebaseError(err));
+      }finally{
+        btnLogin.disabled=false; btnLogin.textContent='Entrar';
+      }
+    });
+    btnLogout.addEventListener('click', ()=>signOut(auth));
+  }
+
+  function escapeHTML(s){ return String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function humanizeFirebaseError(err){
     const code = String(err?.code||'').toLowerCase();
-    if (code.includes('auth/invalid-email')) return 'E-mail inválido.';
-    if (code.includes('auth/wrong-password')) return 'Senha incorreta.';
-    if (code.includes('auth/user-not-found')) return 'Usuário não encontrado.';
-    if (code.includes('auth/too-many-requests')) return 'Muitas tentativas. Aguarde alguns minutos.';
-    if (code.includes('auth/network-request-failed')) return 'Sem conexão de rede.';
-    if (c
+    if(code.includes('permission-denied')) return 'Sem permissão. Faça login.';
+    if(code.includes('unauthenticated')) return 'Você precisa estar logado.';
+    if(code.includes('failed-precondition')) return 'Verifique as regras do Firestore.';
+    if(code.includes('auth/invalid-credential') || code.includes('wrong-password')) return 'Senha incorreta.';
+    if(code.includes('user-not-found')) return 'Usuário não encontrado.';
+    if(code.includes('network')) return 'Falha de rede. Verifique sua internet.';
+    return code || 'Erro desconhecido';
+  }
+
+  // init
+  bindUI(); buildHallSelects(); initAuth();
