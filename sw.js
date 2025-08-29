@@ -1,4 +1,4 @@
-// sw.js — deixa instalável e funciona offline básico
+// sw.js — cache leve (instalação do PWA)
 const CACHE = "festas-v1";
 const ASSETS = [
   "./",
@@ -11,27 +11,24 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter(k => k!==CACHE).map(k => caches.delete(k)))
     )
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (e) => {
-  const req = e.request;
-  // Rede primeiro; se falhar, cache
+  // Network-first, fallback para cache
   e.respondWith(
-    fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy));
+    fetch(e.request).then((res) => {
+      const clone = res.clone();
+      caches.open(CACHE).then((c) => c.put(e.request, clone));
       return res;
-    }).catch(() => caches.match(req).then(m => m || caches.match("./index.html")))
+    }).catch(() => caches.match(e.request))
   );
 });
