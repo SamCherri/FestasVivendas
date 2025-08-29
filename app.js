@@ -20,7 +20,7 @@ let state = {
   monthBase: new Date(),
   halls: ["Gourmet", "Menor"],
   parties: [],
-  view: "calendar" // "calendar" | "list"
+  view: "calendar"
 };
 
 let deferredPrompt = null;
@@ -29,7 +29,6 @@ document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
-  // PWA
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
 
@@ -37,7 +36,7 @@ function init() {
     state.user = u ? { email: u.email, uid: u.uid } : null;
     toggleAuthUI();
     if (u) {
-      startPartiesListener(); // tempo real
+      startPartiesListener();
       renderAll();
       showView(state.view);
     } else {
@@ -78,7 +77,7 @@ function bindEvents() {
     catch { err("Falha no login. Confira e-mail e senha."); }
   });
 
-  // Instalar app
+  // Instalar (botão no login e no menu)
   $("#btn-install")?.addEventListener("click", promptInstall);
   $("#m-install")?.addEventListener("click", () => { closeDrawer(); promptInstall(); });
 
@@ -92,7 +91,7 @@ function bindEvents() {
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
 
-  // Ações gerais
+  // Ações
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
 
@@ -106,9 +105,23 @@ function bindEvents() {
 }
 
 function promptInstall(){
-  if (!deferredPrompt) { return toast("Se não aparecer, use “Adicionar à tela inicial” do navegador."); }
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.finally(()=> deferredPrompt=null);
+  // já está instalado?
+  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+    return toast("Já está instalado.");
+  }
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(()=> deferredPrompt=null);
+    return;
+  }
+  // Fallback simples (quando o navegador não mostra o popup)
+  if (isIOS) {
+    alert("iPhone/iPad: toque em Compartilhar (ícone de seta) → 'Adicionar à Tela de Início'.");
+  } else {
+    alert("Android/Chrome: toque nos três pontos (︙) → 'Instalar app'.");
+  }
 }
 
 function showView(view){
@@ -342,8 +355,6 @@ function openPartyDialog(existing=null){
 async function savePartyFromForm(){
   const form = $("#party-form");
   const data = Object.fromEntries(new FormData(form).entries());
-
-  // limpeza básica
   data.date = (data.date||"").trim();
   data.hall = (data.hall||"").trim();
   data.start_time = (data.start_time||"").trim();
@@ -354,16 +365,7 @@ async function savePartyFromForm(){
   data.spoons=num(data.spoons); data.plates=num(data.plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
 
-  // validações simples
-  if (!data.date || !data.hall || !data.start_time) return err("Preencha data, salão e início.");
-  if (data.end_time && !isAfter(data.start_time, data.end_time)) return err("Término deve ser depois do início.");
-
-  // conflito de horário no mesmo salão e data
   const editingId = form.dataset.editing || null;
-  if (hasConflict(data.date, data.hall, data.start_time, data.end_time || "23:59", editingId)) {
-    return err("Conflito: já existe festa nesse salão/horário.");
-  }
-
   try {
     if (editingId){ await updateParty(editingId, data); }
     else { await createParty({ ...data, created_at: Date.now() }); }
@@ -472,7 +474,8 @@ function requestNotify(){
   });
 }
 function startReminderLoop(){ setInterval(checkReminders, 60*1000); checkReminders(); }
-
-// guarda avisos já feitos (persiste no navegador)
 const notifiedOnce = new Set(JSON.parse(localStorage.getItem("notified_keys") || "[]"));
-function persistNotified(){ localStorage.setItem("notified_keys", JSON.stringify(
+function persistNotified(){ localStorage.setItem("notified_keys", JSON.stringify([...notifiedOnce])); }
+function checkReminders(){
+  if (!("Notification" in window) || Notification.permission!=="granted") return;
+  con
