@@ -1,7 +1,6 @@
 // app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
 
-// Firebase (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -24,12 +23,6 @@ function initTheme(){
   const theme = saved || getSystemPrefers();
   applyTheme(theme);
 }
-function toggleTheme(){
-  const current = document.documentElement.getAttribute('data-theme') || 'dark';
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('theme', next);
-  applyTheme(next);
-}
 
 /* ========= Firebase ========= */
 const app = initializeApp(firebaseConfig);
@@ -42,20 +35,18 @@ let state = {
   monthBase: new Date(),
   halls: ["Gourmet", "Menor"],
   parties: [],
-  view: "calendar" // "calendar" | "list"
+  view: "calendar"
 };
 
-let deferredPrompt = null; // instalar app
+let deferredPrompt = null;
 document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
-  // SW para PWA
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
 
   initTheme();
-  document.addEventListener('click', (e)=>{ if (e.target && e.target.id === 'btn-theme') toggleTheme(); });
 
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -86,6 +77,17 @@ function openDrawer(){ $("#drawer").hidden=false; $("#backdrop").hidden=false; s
 function closeDrawer(){ $("#drawer").classList.remove("open"); setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; },180); }
 
 function bindEvents() {
+  // Botão de tema – ligar direto no botão (melhor no mobile)
+  const themeBtn = $("#btn-theme");
+  if (themeBtn){
+    themeBtn.addEventListener("click", ()=>{
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('theme', next);
+      applyTheme(next);
+    }, {passive:true});
+  }
+
   // Login
   $("#btn-login")?.addEventListener("click", async (e) => {
     e.preventDefault();
@@ -106,18 +108,13 @@ function bindEvents() {
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); });
 
-  // Instalar app (PWA)
+  // PWA
   $("#btn-install")?.addEventListener("click", async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } else { $("#install-dialog").showModal(); } });
   $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
 
   // Ações gerais
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
-  $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
-  $("#btn-finalize-cancel")?.addEventListener("click", () => $("#finalize-dialog").close());
-
-  $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
-  $("#btn-finalize-save")?.addEventListener("click", (e) => { e.preventDefault(); saveFinalizeFromForm(); });
 
   // Calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
@@ -203,7 +200,6 @@ function renderCalendar(){
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    // bolinha verde sem número
     const has = state.parties.some(p => p.date === dateStr);
     if (has) {
       const dot = document.createElement("span");
@@ -223,7 +219,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela (com versão mobile em cards) ========= */
+/* ========= Tabela (cards no mobile) ========= */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -246,7 +242,6 @@ function renderTable(){
 
   list.forEach(p=>{
     const tr = document.createElement("tr");
-
     const showFinalize = eventEnded(p);
     const statusBadge = p.status ? `<span class="badge ${p.status==="ok"?"ok":"warn"}">${p.status==="ok"?"OK":"Ocorrência"}</span>` : "";
 
@@ -296,7 +291,6 @@ function eventEnded(p){
   const end = new Date(`${p.date}T${p.end_time || "23:59"}`);
   return new Date() > end;
 }
-
 function matSummary(p){
   const req = `${p.cups||0} copos, ${p.plates||0} pratos`;
   const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
@@ -304,6 +298,7 @@ function matSummary(p){
 }
 
 /* ========= Nova/Editar ========= */
+// (iguais à versão anterior, mantidas)
 function openPartyDialog(existing=null){
   const dlg = $("#party-dialog");
   dlg.innerHTML = `
@@ -337,7 +332,6 @@ function openPartyDialog(existing=null){
       </menu>
     </form>
   `;
-  // Preenche selects e valores
   fillHallSelects();
   const form = dlg.querySelector("#party-form");
   form.dataset.editing = existing ? existing.id : "";
@@ -359,14 +353,12 @@ function openPartyDialog(existing=null){
   dlg.querySelector("#btn-cancel").addEventListener("click", ()=> dlg.close());
   dlg.querySelector("#btn-save").addEventListener("click", (e)=>{ e.preventDefault(); savePartyFromForm(); });
 }
-
 async function savePartyFromForm(){
   const form = $("#party-form");
   const data = Object.fromEntries(new FormData(form).entries());
   data.cups = num(data.cups); data.forks=num(data.forks); data.knives=num(data.knives);
   data.spoons=num(data.spoons); data.plates=num(data.plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
-
   const editingId = form.dataset.editing;
   try {
     if (editingId){ await updateParty(editingId, data); }
@@ -378,7 +370,6 @@ async function savePartyFromForm(){
 
 /* ========= Finalizar ========= */
 let currentFinalizeId = null;
-
 function openFinalize(p){
   currentFinalizeId = p.id;
   const dlg = $("#finalize-dialog");
@@ -413,7 +404,6 @@ function openFinalize(p){
   dlg.querySelector("#btn-finalize-cancel").addEventListener("click", ()=> dlg.close());
   dlg.querySelector("#btn-finalize-save").addEventListener("click", (e)=>{ e.preventDefault(); saveFinalizeFromForm(); });
 }
-
 async function saveFinalizeFromForm(){
   if (!currentFinalizeId) return;
   const f = $("#finalize-form");
@@ -459,7 +449,6 @@ function openView(p){
   `;
   $("#view-dialog").showModal();
 }
-
 async function openGuests(p){
   const list = prompt("Edite os convidados (separe por ponto e vírgula ';'):", (p.guests||[]).join("; "));
   if (list===null) return;
@@ -471,4 +460,15 @@ async function openGuests(p){
 /* ========= Lembretes ========= */
 function requestNotify(){
   if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
-  Notification.requestPermission().then((pe
+  Notification.requestPermission().then((perm)=>{
+    if (perm==="granted") toast("Lembretes ativados."); else err("Permissão negada.");
+  });
+}
+function startReminderLoop(){ setInterval(checkReminders, 60*1000); checkReminders(); }
+function checkReminders(){
+  if (!("Notification" in window) || Notification.permission!=="granted") return;
+  const today = new Date();
+  state.parties.forEach(p=>{
+    if (!p.date) return;
+    const d = new Date(p.date+"T00:00:00");
+    const diffDays
