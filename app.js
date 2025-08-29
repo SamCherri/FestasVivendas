@@ -3,12 +3,8 @@ import { firebaseConfig, APP_NAME } from "./config.js";
 
 // Firebase (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -31,7 +27,6 @@ document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
-  // PWA
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
 
@@ -53,9 +48,65 @@ function ensureHelpers() {
   style.textContent = `
     .center-v{display:grid;min-height:60vh;place-items:center}
     .action-btn{margin-right:6px}
-    .cal-badge{position:absolute;right:6px;bottom:6px}
+    .cal-dot{position:absolute;right:6px;bottom:6px;width:9px;height:9px;border-radius:50%;background:#1fb87a;border:1px solid rgba(24,192,122,.5)}
   `;
   document.head.appendChild(style);
+}
+
+/* ========= Drawer ========= */
+function openDrawer(){ $("#drawer").hidden=false; $("#backdrop").hidden=false; setTimeout(()=>$("#drawer").classList.add("open"),0); }
+function closeDrawer(){ $("#drawer").classList.remove("open"); $("#backdrop").hidden=false; setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; },180); }
+
+function bindEvents() {
+  // login
+  $("#btn-login")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const email = $("#login-form [name=email]").value.trim();
+    const pass  = $("#login-form [name=password]").value;
+    if (!email || !pass) return err("Preencha e-mail e senha.");
+    try { await signInWithEmailAndPassword(auth, email, pass); toast("Login ok."); }
+    catch { err("Falha no login. Confira e-mail e senha."); }
+  });
+
+  $("#btn-logout")?.addEventListener("click", async () => { await signOut(auth); toast("Saiu."); });
+
+  // menu lateral
+  $("#btn-menu")?.addEventListener("click", openDrawer);
+  $("#btn-close-drawer")?.addEventListener("click", closeDrawer);
+  $("#backdrop")?.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e)=>{ if(e.key==="Escape"&&!$("#login-section").hidden) return; if(e.key==="Escape") closeDrawer(); });
+
+  // itens do menu
+  $('[data-go="calendar"]')?.addEventListener("click", ()=>{ closeDrawer(); document.querySelector("#sec-calendar").scrollIntoView({behavior:"smooth"}); });
+  $('[data-go="list"]')?.addEventListener("click", ()=>{ closeDrawer(); document.querySelector("#sec-list").scrollIntoView({behavior:"smooth"}); });
+  $("#m-new")?.addEventListener("click", ()=>{ closeDrawer(); openPartyDialog(); });
+  $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
+  $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); });
+
+  // instalar app
+  $("#btn-install")?.addEventListener("click", async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } else { $("#install-dialog").showModal(); } });
+  $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
+
+  // ações principais
+  $("#btn-new")?.addEventListener("click", () => openPartyDialog());
+  $("#fab-new")?.addEventListener("click", () => openPartyDialog());
+  $("#btn-notify")?.addEventListener("click", () => requestNotify());
+
+  // dialogs
+  $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
+  $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
+  $("#btn-finalize-cancel")?.addEventListener("click", () => $("#finalize-dialog").close());
+
+  $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
+  $("#btn-finalize-save")?.addEventListener("click", (e) => { e.preventDefault(); saveFinalizeFromForm(); });
+
+  // calendário
+  $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
+  $("#cal-next")?.addEventListener("click", () => { shiftMonth(1); });
+
+  // filtros
+  $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
+  $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
 }
 
 function fillHallSelects() {
@@ -69,48 +120,6 @@ function fillHallSelects() {
       sel.appendChild(o);
     });
   });
-}
-
-function bindEvents() {
-  $("#btn-login")?.addEventListener("click", async (e) => {
-    e.preventDefault();
-    const email = $("#login-form [name=email]").value.trim();
-    const pass  = $("#login-form [name=password]").value;
-    if (!email || !pass) return err("Preencha e-mail e senha.");
-    try { await signInWithEmailAndPassword(auth, email, pass); toast("Login ok."); }
-    catch { err("Falha no login. Confira e-mail e senha."); }
-  });
-
-  $("#btn-logout")?.addEventListener("click", async () => { await signOut(auth); toast("Saiu."); });
-
-  // Instalar app
-  $("#btn-install")?.addEventListener("click", async () => {
-    if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
-    else { $("#install-dialog").showModal(); }
-  });
-  $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
-
-  $("#btn-new")?.addEventListener("click", () => openPartyDialog());
-  $("#fab-new")?.addEventListener("click", () => openPartyDialog());
-
-  $("#btn-notify")?.addEventListener("click", () => requestNotify());
-
-  $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
-  $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
-
-  $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
-
-  // FINALIZAR
-  $("#btn-finalize-cancel")?.addEventListener("click", () => $("#finalize-dialog").close());
-  $("#btn-finalize-save")?.addEventListener("click", (e) => { e.preventDefault(); saveFinalizeFromForm(); });
-
-  // calendário
-  $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
-  $("#cal-next")?.addEventListener("click", () => { shiftMonth(1); });
-
-  // filtros
-  $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
-  $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
 }
 
 function toggleAuthUI() {
@@ -127,18 +136,13 @@ async function loadParties() {
   const snap = await getDocs(collection(db, "parties"));
   state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-
-async function createParty(data) {
-  const ref = await addDoc(collection(db, "parties"), data);
-  return ref.id;
-}
+async function createParty(data) { const ref = await addDoc(collection(db, "parties"), data); return ref.id; }
 async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), data); }
 async function deleteParty(id) { await deleteDoc(doc(db, "parties", id)); }
 
 /* ========= Calendário & KPIs ========= */
 function shiftMonth(n) { const d = new Date(state.monthBase); d.setMonth(d.getMonth()+n); state.monthBase = d; renderCalendar(); }
 function renderAll() { renderCalendar(); renderTable(); updateKPIs(); }
-
 function updateKPIs() {
   const todayStr = fmtDate(new Date());
   const fourWeeks = new Date(); fourWeeks.setDate(fourWeeks.getDate()+28);
@@ -174,17 +178,18 @@ function renderCalendar() {
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    const count = state.parties.filter(p => p.date === dateStr).length;
-    if (count > 0) {
-      const badge = document.createElement("span");
-      badge.className = "badge-small cal-badge";
-      badge.textContent = count;
-      hit.appendChild(badge);
+    // bolinha sem número
+    const has = state.parties.some(p => p.date === dateStr);
+    if (has) {
+      const dot = document.createElement("span");
+      dot.className = "cal-dot";
+      hit.appendChild(dot);
     }
 
     hit.addEventListener("click", () => {
       $("#filters [name=date]").value = dateStr;
       renderTable();
+      document.querySelector("#sec-list").scrollIntoView({behavior:"smooth"});
     });
 
     if (dateStr === fmtDate(new Date())) cell.classList.add("cal-today");
@@ -217,10 +222,7 @@ function renderTable() {
   list.forEach(p => {
     const tr = document.createElement("tr");
     const showFinalize = eventEnded(p);
-
-    const statusBadge = p.status
-      ? `<span class="badge ${p.status === "ok" ? "ok" : "warn"}">${p.status === "ok" ? "OK" : "Ocorrência"}</span>`
-      : "";
+    const statusBadge = p.status ? `<span class="badge ${p.status === "ok" ? "ok" : "warn"}">${p.status === "ok" ? "OK" : "Ocorrência"}</span>` : "";
 
     tr.innerHTML = `
       <td>${p.date}</td>
@@ -296,8 +298,6 @@ function openPartyDialog(existing=null){
 async function savePartyFromForm(){
   const form = $("#party-form");
   const data = Object.fromEntries(new FormData(form).entries());
-
-  // normalizar
   data.cups = num(data.cups); data.forks=num(data.forks); data.knives=num(data.knives);
   data.spoons=num(data.spoons); data.plates=num(data.plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
@@ -333,7 +333,7 @@ async function saveFinalizeFromForm(){
   const f = $("#finalize-form");
   const data = Object.fromEntries(new FormData(f).entries());
   const patch = {
-    status: data.status, // "ok" ou "occurrence"
+    status: data.status,
     occurrence_notes: data.occurrence_notes || "",
     broken_cups:   num(data.broken_cups),
     broken_forks:  num(data.broken_forks),
@@ -383,7 +383,7 @@ async function openGuests(p){
   catch { err("Não foi possível atualizar convidados."); }
 }
 
-/* ========= Lembretes (navegador) ========= */
+/* ========= Lembretes ========= */
 function requestNotify(){
   if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
   Notification.requestPermission().then((perm)=>{
