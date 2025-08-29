@@ -9,35 +9,34 @@
   <meta name="theme-color" content="#0B74B8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- força recarregar CSS em atualizações -->
+  <link rel="stylesheet" href="style.css?v=mobile2" />
   <style>[hidden]{display:none!important}</style>
-  <script type="module" src="config.js"></script>
-  <script type="module" src="app.js"></script>
 </head>
 <body>
   <!-- Topo minimalista -->
   <header class="topbar">
-    <button id="btn-menu" class="btn ghost icon" aria-label="Menu">☰</button>
+    <button id="btn-menu" class="btn ghost icon" aria-label="Menu" type="button">☰</button>
     <div class="brand">
       <img src="favicon.svg" alt="" width="24" height="24" />
       <span>Vivendas de La Salle</span>
     </div>
-    <button id="btn-theme" class="btn ghost icon" aria-label="Mudar tema" title="Mudar tema">🌙</button>
+    <button id="btn-theme" class="btn ghost icon" aria-label="Mudar tema" title="Mudar tema" type="button">🌙</button>
   </header>
 
   <!-- Menu lateral -->
   <aside id="drawer" class="drawer" hidden>
     <div class="drawer-head">
       <strong>Menu</strong>
-      <button id="btn-close-drawer" class="btn link">Fechar</button>
+      <button id="btn-close-drawer" class="btn link" type="button">Fechar</button>
     </div>
     <nav class="drawer-nav">
-      <button class="drawer-item" data-go="calendar">📅 Calendário</button>
-      <button class="drawer-item" data-go="list">📋 Festas</button>
+      <button class="drawer-item" data-go="calendar" type="button">📅 Calendário</button>
+      <button class="drawer-item" data-go="list" type="button">📋 Festas</button>
       <hr/>
-      <button class="drawer-item" id="m-new">➕ Nova Festa</button>
-      <button class="drawer-item" id="m-notify">🔔 Lembretes</button>
-      <button class="drawer-item" id="m-logout">🚪 Sair</button>
+      <button class="drawer-item" id="m-new" type="button">➕ Nova Festa</button>
+      <button class="drawer-item" id="m-notify" type="button">🔔 Lembretes</button>
+      <button class="drawer-item" id="m-logout" type="button">🚪 Sair</button>
     </nav>
   </aside>
   <div id="backdrop" class="backdrop" hidden></div>
@@ -53,8 +52,8 @@
         <label>Senha
           <input type="password" name="password" required minlength="6" placeholder="••••••••">
         </label>
-        <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn primary" id="btn-login">Entrar</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn primary" id="btn-login" type="submit">Entrar</button>
           <button type="button" class="btn ghost" id="btn-install">Instalar no celular</button>
         </div>
       </form>
@@ -73,9 +72,9 @@
 
         <section class="card calendar">
           <header class="cal-header">
-            <button id="cal-prev" class="btn">◀</button>
+            <button id="cal-prev" class="btn" type="button">◀</button>
             <div id="cal-title" class="cal-title">Mês Ano</div>
-            <button id="cal-next" class="btn">▶</button>
+            <button id="cal-next" class="btn" type="button">▶</button>
           </header>
           <div id="cal-grid" class="cal-grid"></div>
           <p class="tiny muted" style="margin-top:8px">
@@ -107,71 +106,11 @@
       </section>
     </section>
 
-    <!-- Dialog Nova/Editar -->
-    <dialog id="party-dialog"><form id="party-form" class="form">
-      <header><h3 id="dialog-title">Nova Festa</h3></header>
-      <div class="grid two">
-        <label>Data <input type="date" name="date" required></label>
-        <label>Salão <select name="hall" required></select></label>
-        <label>Início <input type="time" name="start_time" required></label>
-        <label>Término <input type="time" name="end_time"></label>
-      </div>
-      <fieldset><legend>Materiais (solicitados)</legend>
-        <div class="grid five">
-          <label>Copos <input type="number" name="cups" min="0" value="0"></label>
-          <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
-          <label>Facas <input type="number" name="knives" min="0" value="0"></label>
-          <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
-          <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
-        </div>
-      </fieldset>
-      <div class="grid two">
-        <label>Apto <input type="text" name="apartment" required></label>
-        <label>Morador <input type="text" name="resident_name" required></label>
-      </div>
-      <label>Convidados
-        <textarea name="guests_text" rows="5" placeholder="Nome 1; Nome 2; ..."></textarea>
-      </label>
-      <menu>
-        <button id="btn-cancel" type="button" class="btn">Cancelar</button>
-        <button id="btn-save" class="btn primary">Salvar</button>
-      </menu>
-    </form></dialog>
+    <!-- Dialogs -->
+    <dialog id="party-dialog"></dialog>
+    <dialog id="finalize-dialog"></dialog>
+    <dialog id="view-dialog"><div id="view-content"></div><menu><button id="btn-close-view" class="btn" type="button">Fechar</button></menu></dialog>
 
-    <!-- Dialog FINALIZAR -->
-    <dialog id="finalize-dialog"><form id="finalize-form" class="form">
-      <header><h3>Finalizar festa</h3></header>
-      <p class="tiny muted">Use este formulário somente depois que a festa terminou.</p>
-      <fieldset>
-        <legend>Resultado</legend>
-        <label><input type="radio" name="status" value="ok" checked> Terminou bem</label>
-        <label><input type="radio" name="status" value="occurrence"> Teve ocorrência</label>
-      </fieldset>
-      <label>Notas (opcional)
-        <textarea name="occurrence_notes" rows="4" placeholder="Descreva a ocorrência"></textarea>
-      </label>
-      <fieldset><legend>Itens quebrados (opcional)</legend>
-        <div class="grid five">
-          <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
-          <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
-          <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
-          <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
-          <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
-        </div>
-      </fieldset>
-      <menu>
-        <button id="btn-finalize-cancel" type="button" class="btn">Cancelar</button>
-        <button id="btn-finalize-save" class="btn primary">Salvar finalização</button>
-      </menu>
-    </form></dialog>
-
-    <!-- Dialog Ver -->
-    <dialog id="view-dialog">
-      <div id="view-content"></div>
-      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
-    </dialog>
-
-    <!-- Dialog Instalar app -->
     <dialog id="install-dialog">
       <div class="card">
         <h3>Instalar no celular</h3>
@@ -181,14 +120,18 @@
           <li><strong>iPhone (Safari):</strong> Compartilhar → <em>Adicionar à Tela de Início</em>.</li>
         </ul>
       </div>
-      <menu><button id="btn-install-close" class="btn">Fechar</button></menu>
+      <menu><button id="btn-install-close" class="btn" type="button">Fechar</button></menu>
     </dialog>
 
-    <button id="fab-new" class="fab" hidden>＋</button>
+    <button id="fab-new" class="fab" hidden type="button">＋</button>
     <div id="toast" class="toast" hidden></div>
     <div id="errbox" class="errbox" hidden></div>
   </main>
 
   <footer class="footer"><small>Vivendas de La Salle — Uso interno</small></footer>
+
+  <!-- JS no final para garantir que os elementos existem -->
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js?v=mobile2"></script>
 </body>
 </html>
