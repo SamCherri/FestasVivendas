@@ -7,6 +7,8 @@
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0B74B8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
   <style>[hidden]{display:none!important}</style>
   <script type="module" src="config.js"></script>
@@ -20,7 +22,6 @@
     </div>
     <nav id="nav-actions" hidden class="actions">
       <button id="btn-new" class="btn primary">Nova Festa</button>
-      <button id="btn-report" class="btn ghost">Relatório</button>
       <button id="btn-notify" class="btn ghost">Ativar lembretes</button>
       <span id="current-user" class="user"></span>
       <button id="btn-logout" class="btn link">Sair</button>
@@ -92,7 +93,7 @@
       </div>
     </section>
 
-    <!-- Dialog Nova/Editar (SEM quebrados aqui) -->
+    <!-- Dialog Nova/Editar (sem “quebrados” aqui) -->
     <dialog id="party-dialog"><form id="party-form" class="form">
       <header><h3 id="dialog-title">Nova Festa</h3></header>
 
@@ -128,20 +129,34 @@
       </menu>
     </form></dialog>
 
-    <!-- Dialog DANOS (quebrados, só depois da festa) -->
-    <dialog id="damage-dialog"><form id="damage-form" class="form">
-      <header><h3>Registrar Danos</h3></header>
-      <p class="tiny muted">Use este formulário apenas após a festa terminar.</p>
-      <div class="grid five">
-        <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
-        <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
-        <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
-        <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
-        <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
-      </div>
+    <!-- Dialog FINALIZAR (após o evento) -->
+    <dialog id="finalize-dialog"><form id="finalize-form" class="form">
+      <header><h3>Finalizar festa</h3></header>
+      <p class="tiny muted">Use este formulário somente depois que a festa terminou.</p>
+
+      <fieldset>
+        <legend>Resultado</legend>
+        <label><input type="radio" name="status" value="ok" checked> Terminou bem</label>
+        <label><input type="radio" name="status" value="occurrence"> Teve ocorrência</label>
+      </fieldset>
+
+      <label>Notas (opcional)
+        <textarea name="occurrence_notes" rows="4" placeholder="Descreva a ocorrência, ex.: prato quebrado, barulho..."></textarea>
+      </label>
+
+      <fieldset><legend>Itens quebrados (opcional)</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
+          <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
+          <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
+          <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
+          <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
+        </div>
+      </fieldset>
+
       <menu>
-        <button id="btn-damage-cancel" type="button" class="btn">Cancelar</button>
-        <button id="btn-damage-save" class="btn primary">Salvar danos</button>
+        <button id="btn-finalize-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-finalize-save" class="btn primary">Salvar finalização</button>
       </menu>
     </form></dialog>
 
@@ -155,12 +170,11 @@
     <dialog id="install-dialog">
       <div class="card">
         <h3>Instalar no celular</h3>
-        <p class="tiny">Passos rápidos:</p>
+        <p class="tiny">Se o botão “Instalar” aparecer, confirme para ter o app. Caso não, siga:</p>
         <ul class="tiny">
-          <li><strong>Android (Chrome):</strong> toque em ⋮ e escolha <em>Adicionar à tela inicial</em>.</li>
-          <li><strong>iPhone (Safari):</strong> toque em <em>Compartilhar</em> → <em>Adicionar à Tela de Início</em>.</li>
+          <li><strong>Android (Chrome):</strong> toque em ⋮ → <em>Instalar app</em> (ou <em>Adicionar à tela inicial</em>).</li>
+          <li><strong>iPhone (Safari):</strong> Compartilhar → <em>Adicionar à Tela de Início</em>.</li>
         </ul>
-        <p class="tiny muted">Se aparecer uma pergunta do navegador para “Instalar app”, confirme.</p>
       </div>
       <menu><button id="btn-install-close" class="btn">Fechar</button></menu>
     </dialog>
@@ -170,6 +184,6 @@
     <div id="errbox" class="errbox" hidden></div>
   </main>
 
-  <footer class="footer"><small>Uso interno — Firestore (sem anexos).</small></footer>
+  <footer class="footer"><small>Uso interno — Firestore (sem anexos). App instalável.</small></footer>
 </body>
 </html>
