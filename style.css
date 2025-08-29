@@ -6,16 +6,14 @@
   --text-lg: clamp(18px, 4.6vw, 20px);
   --text-xl: clamp(20px, 5.6vw, 24px);
   --radius:16px; --space:12px;
-  --line:#203247;            /* linhas/bordas */
-  --surface:#13263a;         /* células e inputs */
-  --hover:rgba(255,255,255,.08);
+  --line:#203247; --surface:#13263a; --hover:rgba(255,255,255,.08);
   --shadow:0 10px 26px rgba(0,0,0,.30);
 }
 
 /* ===== Tema: Light ===== */
 html[data-theme="light"]{
   --bg:#f6f9fc; --panel:#ffffff; --card:#ffffff; --muted:#55657a;
-  --primary:#0a6ccf; --secondary:#18A06F; --danger:#d6463a; --white:#000;
+  --primary:#0a6ccf; --secondary:#18A06F; --danger:#d6463a;
   --line:#e4e9f0; --surface:#f0f5fb; --hover:rgba(0,0,0,.06);
   --shadow:0 10px 22px rgba(0,0,0,.08);
 }
@@ -23,13 +21,25 @@ html[data-theme="light"]{
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 html,body{
-  margin:0; padding:0; background:var(--bg);
-  color:#e6f0ff; font:400 var(--text)/1.55 system-ui,-apple-system,Segoe UI,Roboto;
+  margin:0; padding:0; background:var(--bg); color:#e6f0ff;
+  font:400 var(--text)/1.55 system-ui,-apple-system,Segoe UI,Roboto;
   overflow-x:hidden; transition:background .2s ease,color .2s ease;
 }
 html[data-theme="light"], html[data-theme="light"] body{ color:#0b1b2b; }
 img{max-width:100%;height:auto;display:block}
 :focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+/* ===== AUMENTOS para telas pequenas ===== */
+@media (max-width: 720px){
+  :root{
+    --text: 18px;
+    --text-lg: 20px;
+    --text-xl: 24px;
+  }
+  .btn{padding:14px 18px}
+  input,select,textarea{padding:12px}
+  .cal-hit{font-size:1.15em}
+}
 
 /* Topbar */
 .topbar{
@@ -110,7 +120,7 @@ html[data-theme="light"] .table tbody tr:nth-child(even){background:#f6f9ff}
 .errbox{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:#3b1215;color:#ffdede;border:1px solid #7d2b31;padding:10px 14px;border-radius:10px;z-index:9}
 .footer{opacity:.7;text-align:center;margin:14px 0}
 
-/* ===== Layout dos botões dentro da coluna Ações (desktop) ===== */
+/* ===== Ações (desktop) ===== */
 .row-actions{display:flex;flex-wrap:wrap;gap:6px}
 
 /* ===== Tabela responsiva (mobile) ===== */
@@ -122,15 +132,15 @@ html[data-theme="light"] .table tbody tr:nth-child(even){background:#f6f9ff}
     border:1px solid var(--line);
     border-radius:12px;
     box-shadow:var(--shadow);
-    padding:10px;
+    padding:12px;
     margin-bottom:12px;
   }
   .table td{
     display:grid;
     grid-template-columns: 120px 1fr; /* rótulo | valor */
-    gap:6px;
+    gap:8px;
     border-bottom:0;
-    padding:8px 4px;
+    padding:10px 4px;
     word-break:break-word;
   }
   .table td::before{
