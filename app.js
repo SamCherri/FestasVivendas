@@ -19,10 +19,11 @@ let state = {
   user: null,
   monthBase: new Date(),
   halls: ["Gourmet", "Menor"],
-  parties: []
+  parties: [],
+  view: "calendar" // "calendar" | "list"
 };
 
-let deferredPrompt = null; // instalar app
+let deferredPrompt = null;
 document.title = APP_NAME;
 
 /* ========= Init ========= */
@@ -33,7 +34,7 @@ function init() {
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
     toggleAuthUI();
-    if (u) loadParties().then(()=>{ renderAll(); });
+    if (u) loadParties().then(()=>{ renderAll(); showView(state.view); });
   });
 
   ensureHelpers();
@@ -48,17 +49,18 @@ function ensureHelpers() {
   style.textContent = `
     .center-v{display:grid;min-height:60vh;place-items:center}
     .action-btn{margin-right:6px}
-    .cal-dot{position:absolute;right:6px;bottom:6px;width:9px;height:9px;border-radius:50%;background:#1fb87a;border:1px solid rgba(24,192,122,.5)}
+    .cal-dot{position:absolute;right:8px;bottom:8px;width:9px;height:9px;border-radius:50%;
+      background:#19d38a;box-shadow:0 0 0 3px rgba(24,192,122,.14)}
   `;
   document.head.appendChild(style);
 }
 
 /* ========= Drawer ========= */
 function openDrawer(){ $("#drawer").hidden=false; $("#backdrop").hidden=false; setTimeout(()=>$("#drawer").classList.add("open"),0); }
-function closeDrawer(){ $("#drawer").classList.remove("open"); $("#backdrop").hidden=false; setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; },180); }
+function closeDrawer(){ $("#drawer").classList.remove("open"); setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; },180); }
 
 function bindEvents() {
-  // login
+  // Login
   $("#btn-login")?.addEventListener("click", async (e) => {
     e.preventDefault();
     const email = $("#login-form [name=email]").value.trim();
@@ -68,31 +70,22 @@ function bindEvents() {
     catch { err("Falha no login. Confira e-mail e senha."); }
   });
 
-  $("#btn-logout")?.addEventListener("click", async () => { await signOut(auth); toast("Saiu."); });
-
-  // menu lateral
+  // Menu
   $("#btn-menu")?.addEventListener("click", openDrawer);
   $("#btn-close-drawer")?.addEventListener("click", closeDrawer);
   $("#backdrop")?.addEventListener("click", closeDrawer);
-  document.addEventListener("keydown", (e)=>{ if(e.key==="Escape"&&!$("#login-section").hidden) return; if(e.key==="Escape") closeDrawer(); });
-
-  // itens do menu
-  $('[data-go="calendar"]')?.addEventListener("click", ()=>{ closeDrawer(); document.querySelector("#sec-calendar").scrollIntoView({behavior:"smooth"}); });
-  $('[data-go="list"]')?.addEventListener("click", ()=>{ closeDrawer(); document.querySelector("#sec-list").scrollIntoView({behavior:"smooth"}); });
+  $('[data-go="calendar"]')?.addEventListener("click", ()=>{ showView("calendar"); closeDrawer(); });
+  $('[data-go="list"]')?.addEventListener("click", ()=>{ showView("list"); closeDrawer(); });
   $("#m-new")?.addEventListener("click", ()=>{ closeDrawer(); openPartyDialog(); });
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); });
 
-  // instalar app
+  // Instalar app
   $("#btn-install")?.addEventListener("click", async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } else { $("#install-dialog").showModal(); } });
   $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
 
-  // ações principais
-  $("#btn-new")?.addEventListener("click", () => openPartyDialog());
+  // Ações
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
-  $("#btn-notify")?.addEventListener("click", () => requestNotify());
-
-  // dialogs
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
   $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
   $("#btn-finalize-cancel")?.addEventListener("click", () => $("#finalize-dialog").close());
@@ -100,13 +93,21 @@ function bindEvents() {
   $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
   $("#btn-finalize-save")?.addEventListener("click", (e) => { e.preventDefault(); saveFinalizeFromForm(); });
 
-  // calendário
+  // Calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
   $("#cal-next")?.addEventListener("click", () => { shiftMonth(1); });
 
-  // filtros
+  // Filtros
   $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
   $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
+}
+
+function showView(view){
+  state.view = view;
+  $("#sec-calendar").hidden = view !== "calendar";
+  $("#sec-list").hidden = view !== "list";
+  // rola pro topo da área
+  document.querySelector(view==="calendar" ? "#sec-calendar" : "#sec-list").scrollIntoView({behavior:"smooth"});
 }
 
 function fillHallSelects() {
@@ -114,7 +115,7 @@ function fillHallSelects() {
   selects.forEach(sel => {
     const firstIsAll = sel.querySelector('option[value=""]') !== null;
     sel.innerHTML = firstIsAll ? '<option value="">Todos</option>' : "";
-    state.halls.forEach(h => {
+    ["Gourmet","Menor"].forEach(h => {
       const o = document.createElement("option");
       o.value = h; o.textContent = h;
       sel.appendChild(o);
@@ -126,9 +127,7 @@ function toggleAuthUI() {
   const logged = !!state.user;
   $("#login-section").hidden = logged;
   $("#app-section").hidden = !logged;
-  $("#nav-actions").hidden = !logged;
   $("#fab-new").hidden = !logged;
-  if (logged) $("#current-user").textContent = state.user.email;
 }
 
 /* ========= Firestore ========= */
@@ -141,17 +140,18 @@ async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), d
 async function deleteParty(id) { await deleteDoc(doc(db, "parties", id)); }
 
 /* ========= Calendário & KPIs ========= */
-function shiftMonth(n) { const d = new Date(state.monthBase); d.setMonth(d.getMonth()+n); state.monthBase = d; renderCalendar(); }
-function renderAll() { renderCalendar(); renderTable(); updateKPIs(); }
-function updateKPIs() {
+function shiftMonth(n){ const d = new Date(state.monthBase); d.setMonth(d.getMonth()+n); state.monthBase = d; renderCalendar(); }
+function renderAll(){ renderCalendar(); renderTable(); updateKPIs(); }
+
+function updateKPIs(){
   const todayStr = fmtDate(new Date());
   const fourWeeks = new Date(); fourWeeks.setDate(fourWeeks.getDate()+28);
   $("#kpi-today").textContent = state.parties.filter(p => p.date === todayStr).length;
   $("#kpi-upcoming").textContent = state.parties.filter(p => new Date(p.date) > new Date() && new Date(p.date) <= fourWeeks).length;
-  $("#kpi-guests").textContent = state.parties.reduce((acc,p)=> acc + (Array.isArray(p.guests)?p.guests.length:0), 0);
+  $("#kpi-guests").textContent = state.parties.reduce((a,p)=> a + (Array.isArray(p.guests)?p.guests.length:0), 0);
 }
 
-function renderCalendar() {
+function renderCalendar(){
   const grid = $("#cal-grid");
   const title = $("#cal-title");
   const base = new Date(state.monthBase.getFullYear(), state.monthBase.getMonth(), 1);
@@ -160,25 +160,25 @@ function renderCalendar() {
   grid.innerHTML = "";
 
   const start = new Date(base);
-  const startWeekday = (start.getDay()+6)%7; // seg=0
+  const startWeekday = (start.getDay()+6)%7; // seg = 0
   start.setDate(start.getDate() - startWeekday);
 
   for (let i=0;i<42;i++){
     const d = new Date(start); d.setDate(start.getDate()+i);
     const dateStr = fmtDate(d);
+
     const cell = document.createElement("div");
     cell.className = "cal-cell";
     if (d.getMonth() !== base.getMonth()) cell.classList.add("cal-out");
 
     const hit = document.createElement("button");
-    hit.className = "cal-hit";
-    hit.title = dateStr;
+    hit.className = "cal-hit"; hit.title = dateStr;
 
     const dayDiv = document.createElement("div");
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    // bolinha sem número
+    // bolinha verde sem número
     const has = state.parties.some(p => p.date === dateStr);
     if (has) {
       const dot = document.createElement("span");
@@ -189,7 +189,7 @@ function renderCalendar() {
     hit.addEventListener("click", () => {
       $("#filters [name=date]").value = dateStr;
       renderTable();
-      document.querySelector("#sec-list").scrollIntoView({behavior:"smooth"});
+      showView("list");
     });
 
     if (dateStr === fmtDate(new Date())) cell.classList.add("cal-today");
@@ -199,7 +199,7 @@ function renderCalendar() {
 }
 
 /* ========= Tabela ========= */
-function renderTable() {
+function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
 
@@ -219,10 +219,10 @@ function renderTable() {
     return;
   }
 
-  list.forEach(p => {
+  list.forEach(p=>{
     const tr = document.createElement("tr");
     const showFinalize = eventEnded(p);
-    const statusBadge = p.status ? `<span class="badge ${p.status === "ok" ? "ok" : "warn"}">${p.status === "ok" ? "OK" : "Ocorrência"}</span>` : "";
+    const statusBadge = p.status ? `<span class="badge ${p.status==="ok"?"ok":"warn"}">${p.status==="ok"?"OK":"Ocorrência"}</span>` : "";
 
     tr.innerHTML = `
       <td>${p.date}</td>
@@ -236,8 +236,8 @@ function renderTable() {
         ${statusBadge}
         <button class="btn tiny action-btn" data-act="view">Ver</button>
         <button class="btn tiny action-btn" data-act="edit">Editar</button>
-        ${showFinalize ? '<button class="btn tiny action-btn" data-act="finalize">Finalizar</button>' : ''}
-        ${p.status ? '<button class="btn tiny action-btn" data-act="refinalize">Editar finalização</button>' : ''}
+        ${showFinalize?'<button class="btn tiny action-btn" data-act="finalize">Finalizar</button>':''}
+        ${p.status?'<button class="btn tiny action-btn" data-act="refinalize">Editar finalização</button>':''}
         <button class="btn tiny action-btn" data-act="guests">Convidados</button>
         <button class="btn tiny danger action-btn" data-act="del">Apagar</button>
       </td>
@@ -247,10 +247,9 @@ function renderTable() {
     tr.querySelector('[data-act="guests"]').addEventListener("click", ()=> openGuests(p));
     if (showFinalize) tr.querySelector('[data-act="finalize"]')?.addEventListener("click", ()=> openFinalize(p));
     if (p.status) tr.querySelector('[data-act="refinalize"]')?.addEventListener("click", ()=> openFinalize(p));
-    tr.querySelector('[data-act="del"]').addEventListener("click", async ()=> {
+    tr.querySelector('[data-act="del"]').addEventListener("click", async ()=>{
       if (!confirm("Apagar esta festa?")) return;
-      await deleteParty(p.id);
-      await loadParties(); renderAll(); toast("Apagado.");
+      await deleteParty(p.id); await loadParties(); renderAll(); toast("Apagado.");
     });
     tbody.appendChild(tr);
   });
