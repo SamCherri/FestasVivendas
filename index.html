@@ -7,21 +7,10 @@
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0B74B8" />
-
-  <!-- Forçar a não cachear -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-
-  <link rel="stylesheet" href="style.css?v=28" />
+  <link rel="stylesheet" href="style.css" />
   <style>[hidden]{display:none!important}</style>
-
-  <!-- Importa sempre versão nova -->
-  <script>
-    const v = Date.now();
-    document.write(`<script type="module" src="config.js?v=${v}"><\/script>`);
-    document.write(`<script type="module" src="app.js?v=${v}"><\/script>`);
-  </script>
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -31,8 +20,8 @@
     </div>
     <nav id="nav-actions" hidden class="actions">
       <button id="btn-new" class="btn primary">Nova Festa</button>
-      <button id="btn-export" class="btn ghost">JSON</button>
-      <button id="btn-export-csv" class="btn ghost">CSV</button>
+      <button id="btn-report" class="btn ghost">Relatório</button>
+      <button id="btn-notify" class="btn ghost">Ativar lembretes</button>
       <span id="current-user" class="user"></span>
       <button id="btn-logout" class="btn link">Sair</button>
     </nav>
@@ -57,12 +46,15 @@
     <!-- APP -->
     <section id="app-section" hidden>
       <h2 class="visually-hidden">Painel</h2>
+
+      <!-- Métricas -->
       <section class="metrics">
-        <div class="metric-card"><div class="metric-k">Hoje</div><div class="metric-v" id="kpi-today">0</div></div>
-        <div class="metric-card"><div class="metric-k">Próx. 4 semanas</div><div class="metric-v" id="kpi-upcoming">0</div></div>
-        <div class="metric-card"><div class="metric-k">Convidados</div><div class="metric-v" id="kpi-guests">0</div></div>
+        <div class="metric"><div class="k">Hoje</div><div class="v" id="kpi-today">0</div></div>
+        <div class="metric"><div class="k">Próx. 4 semanas</div><div class="v" id="kpi-upcoming">0</div></div>
+        <div class="metric"><div class="k">Convidados</div><div class="v" id="kpi-guests">0</div></div>
       </section>
 
+      <!-- Calendário -->
       <section class="card calendar">
         <header class="cal-header">
           <button id="cal-prev" class="btn">◀</button>
@@ -72,6 +64,7 @@
         <div id="cal-grid" class="cal-grid"></div>
       </section>
 
+      <!-- Filtros -->
       <form id="filters" class="filters card">
         <label>Data <input type="date" name="date"></label>
         <label>Salão <select name="hall"><option value="">Todos</option></select></label>
@@ -79,52 +72,79 @@
         <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
       </form>
 
-      <div id="cards" class="cards"></div>
-      <p id="empty-msg" class="muted center" hidden>Nenhum registro.</p>
-      <p id="loading-msg" class="muted center">Carregando…</p>
-
+      <!-- Lista principal (tabela única) -->
       <div class="card table-wrapper">
         <table class="table">
           <thead>
-            <tr><th>Data</th><th>Início</th><th>Término</th><th>Salão</th><th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th></tr>
+            <tr>
+              <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
+              <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
+            </tr>
           </thead>
           <tbody id="tbody-parties"></tbody>
         </table>
       </div>
     </section>
 
+    <!-- Dialog Nova/Editar -->
     <dialog id="party-dialog"><form id="party-form" class="form">
       <header><h3 id="dialog-title">Nova Festa</h3></header>
+
       <div class="grid two">
         <label>Data <input type="date" name="date" required></label>
         <label>Salão <select name="hall" required></select></label>
         <label>Início <input type="time" name="start_time" required></label>
         <label>Término <input type="time" name="end_time"></label>
       </div>
-      <fieldset><legend>Materiais</legend>
+
+      <fieldset><legend>Materiais (solicitados)</legend>
         <div class="grid five">
-          <label>Copos <input type="number" name="cups" min="0"></label>
-          <label>Garfos <input type="number" name="forks" min="0"></label>
-          <label>Facas <input type="number" name="knives" min="0"></label>
-          <label>Colheres <input type="number" name="spoons" min="0"></label>
-          <label>Pratos <input type="number" name="plates" min="0"></label>
+          <label>Copos <input type="number" name="cups" min="0" value="0"></label>
+          <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
+          <label>Facas <input type="number" name="knives" min="0" value="0"></label>
+          <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
+          <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
         </div>
       </fieldset>
+
+      <fieldset><legend>Materiais quebrados (após o evento)</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
+          <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
+          <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
+          <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
+          <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
+        </div>
+      </fieldset>
+
       <div class="grid two">
         <label>Apto <input type="text" name="apartment" required></label>
         <label>Morador <input type="text" name="resident_name" required></label>
       </div>
-      <label>Convidados <textarea name="guests_text" rows="5"></textarea></label>
-      <menu><button id="btn-cancel" class="btn">Cancelar</button><button id="btn-save" class="btn primary">Salvar</button></menu>
+
+      <label>Convidados
+        <textarea name="guests_text" rows="5" placeholder="Nome 1; Nome 2; ..."></textarea>
+      </label>
+
+      <!-- Sem campo de anexo (desativado) -->
+
+      <menu>
+        <button id="btn-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-save" class="btn primary">Salvar</button>
+      </menu>
     </form></dialog>
 
-    <dialog id="view-dialog"><div id="view-content"></div><menu><button id="btn-close-view" class="btn">Fechar</button></menu></dialog>
+    <!-- Dialog Visualizar -->
+    <dialog id="view-dialog">
+      <div id="view-content"></div>
+      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
+    </dialog>
 
     <button id="fab-new" class="fab" hidden>＋</button>
     <div id="toast" class="toast" hidden></div>
     <div id="errbox" class="errbox" hidden></div>
   </main>
 
-  <footer class="footer"><small>Uso interno — Firebase.</small></footer>
+  <footer class="footer"><small>Uso interno — Banco: Firestore (sem anexos).</small></footer>
 </body>
 </html>
