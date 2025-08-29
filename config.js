@@ -1,6 +1,4 @@
-// config.js
 export const APP_NAME = "Vivendas de La Salle — Festas";
-
 export const firebaseConfig = {
   apiKey: "AIzaSyDsMEbeVz-niQVM3GydnycJ0HcvLWNikw4",
   authDomain: "festavivendas.firebaseapp.com",
