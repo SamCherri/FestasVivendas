@@ -1,20 +1,15 @@
-// app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
-
-// Firebase CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 
-/* ========= Firebase ========= */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-/* ========= Estado ========= */
 let state = {
   user: null,
   monthBase: new Date(),
@@ -22,12 +17,9 @@ let state = {
   parties: [],
   view: "calendar"
 };
-
 let deferredPrompt = null;
-let unsubParties = null;
 document.title = APP_NAME;
 
-/* ========= Init ========= */
 function init() {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
@@ -35,13 +27,7 @@ function init() {
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
     toggleAuthUI();
-    if (u) {
-      startPartiesListener();
-      renderAll();
-      showView(state.view);
-    } else {
-      stopPartiesListener();
-    }
+    if (u) loadParties().then(()=>{ renderAll(); showView(state.view); });
   });
 
   ensureHelpers();
@@ -62,12 +48,10 @@ function ensureHelpers() {
   document.head.appendChild(style);
 }
 
-/* ========= Drawer ========= */
 function openDrawer(){ $("#drawer").hidden=false; $("#backdrop").hidden=false; setTimeout(()=>$("#drawer").classList.add("open"),0); }
 function closeDrawer(){ $("#drawer").classList.remove("open"); setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; },180); }
 
 function bindEvents() {
-  // Login
   $("#btn-login")?.addEventListener("click", async (e) => {
     e.preventDefault();
     const email = $("#login-form [name=email]").value.trim();
@@ -77,11 +61,6 @@ function bindEvents() {
     catch { err("Falha no login. Confira e-mail e senha."); }
   });
 
-  // Instalar (botão no login e no menu)
-  $("#btn-install")?.addEventListener("click", promptInstall);
-  $("#m-install")?.addEventListener("click", () => { closeDrawer(); promptInstall(); });
-
-  // Menu
   $("#btn-menu")?.addEventListener("click", openDrawer);
   $("#btn-close-drawer")?.addEventListener("click", closeDrawer);
   $("#backdrop")?.addEventListener("click", closeDrawer);
@@ -91,37 +70,14 @@ function bindEvents() {
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
 
-  // Ações
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
 
-  // Calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
   $("#cal-next")?.addEventListener("click", () => { shiftMonth(1); });
 
-  // Filtros (lista)
   $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
   $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
-}
-
-function promptInstall(){
-  // já está instalado?
-  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
-    return toast("Já está instalado.");
-  }
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.finally(()=> deferredPrompt=null);
-    return;
-  }
-  // Fallback simples (quando o navegador não mostra o popup)
-  if (isIOS) {
-    alert("iPhone/iPad: toque em Compartilhar (ícone de seta) → 'Adicionar à Tela de Início'.");
-  } else {
-    alert("Android/Chrome: toque nos três pontos (︙) → 'Instalar app'.");
-  }
 }
 
 function showView(view){
@@ -151,33 +107,24 @@ function toggleAuthUI() {
   $("#fab-new").hidden = !logged;
 }
 
-/* ========= Firestore (tempo real) ========= */
-function startPartiesListener(){
-  stopPartiesListener();
-  const colRef = collection(db, "parties");
-  unsubParties = onSnapshot(colRef, (snap)=>{
-    state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderAll();
-  });
+/* Firestore */
+async function loadParties() {
+  const snap = await getDocs(collection(db, "parties"));
+  state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-function stopPartiesListener(){ if (unsubParties) { unsubParties(); unsubParties=null; } }
-
 async function createParty(data) { const ref = await addDoc(collection(db, "parties"), data); return ref.id; }
 async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), data); }
 async function deleteParty(id) { await deleteDoc(doc(db, "parties", id)); }
 
-/* ========= Calendário & KPIs ========= */
+/* Calendário & KPIs */
 function shiftMonth(n){ const d = new Date(state.monthBase); d.setMonth(d.getMonth()+n); state.monthBase = d; renderCalendar(); }
 function renderAll(){ renderCalendar(); renderTable(); updateKPIs(); }
 
 function updateKPIs(){
   const todayStr = fmtDate(new Date());
-  const fourWeeks = addDays(new Date(), 28);
+  const fourWeeks = new Date(); fourWeeks.setDate(fourWeeks.getDate()+28);
   $("#kpi-today").textContent = state.parties.filter(p => p.date === todayStr).length;
-  $("#kpi-upcoming").textContent = state.parties.filter(p => {
-    const d = toDateOnly(p.date);
-    return d > toDateOnly(new Date()) && d <= toDateOnly(fourWeeks);
-  }).length;
+  $("#kpi-upcoming").textContent = state.parties.filter(p => new Date(p.date) > new Date() && new Date(p.date) <= fourWeeks).length;
   $("#kpi-guests").textContent = state.parties.reduce((a,p)=> a + (Array.isArray(p.guests)?p.guests.length:0), 0);
 }
 
@@ -208,9 +155,12 @@ function renderCalendar(){
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    // bolinha verde (tem festa)
     const has = state.parties.some(p => p.date === dateStr);
-    if (has) { const dot = document.createElement("span"); dot.className = "cal-dot"; hit.appendChild(dot); }
+    if (has) {
+      const dot = document.createElement("span");
+      dot.className = "cal-dot";
+      hit.appendChild(dot);
+    }
 
     hit.addEventListener("click", () => {
       $("#filters [name=date]").value = dateStr;
@@ -224,10 +174,9 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela ========= */
+/* Tabela (cards no mobile) */
 function renderTable(){
   const tbody = $("#tbody-parties");
-  if (!tbody) return;
   tbody.innerHTML = "";
 
   const fDate = $("#filters [name=date]").value;
@@ -276,8 +225,7 @@ function renderTable(){
     if (p.status) tr.querySelector('[data-act="refinalize"]')?.addEventListener("click", ()=> openFinalize(p));
     tr.querySelector('[data-act="del"]').addEventListener("click", async ()=>{
       if (!confirm("Apagar esta festa?")) return;
-      await deleteParty(p.id);
-      toast("Apagado.");
+      await deleteParty(p.id); await loadParties(); renderAll(); toast("Apagado.");
     });
 
     tbody.appendChild(tr);
@@ -295,7 +243,7 @@ function matSummary(p){
   return `${req}${brk?` • quebrados: ${brk}`:""}`;
 }
 
-/* ========= Nova/Editar ========= */
+/* Nova/Editar */
 function openPartyDialog(existing=null){
   const dlg = $("#party-dialog");
   dlg.innerHTML = `
@@ -338,11 +286,13 @@ function openPartyDialog(existing=null){
     form.hall.value = existing.hall || "";
     form.start_time.value = existing.start_time || "";
     form.end_time.value = existing.end_time || "";
-    form.apartment.value = (existing.apartment||"").trim();
-    form.resident_name.value = (existing.resident_name||"").trim();
-    form.cups.value = num(existing.cups);     form.forks.value = num(existing.forks);
-    form.knives.value = num(existing.knives); form.spoons.value = num(existing.spoons);
-    form.plates.value = num(existing.plates);
+    form.apartment.value = existing.apartment || "";
+    form.resident_name.value = existing.resident_name || "";
+    form.cups.value = existing.cups||0;
+    form.forks.value = existing.forks||0;
+    form.knives.value = existing.knives||0;
+    form.spoons.value = existing.spoons||0;
+    form.plates.value = existing.plates||0;
     form.guests_text.value = (existing.guests||[]).join("; ");
   }
 
@@ -355,26 +305,20 @@ function openPartyDialog(existing=null){
 async function savePartyFromForm(){
   const form = $("#party-form");
   const data = Object.fromEntries(new FormData(form).entries());
-  data.date = (data.date||"").trim();
-  data.hall = (data.hall||"").trim();
-  data.start_time = (data.start_time||"").trim();
-  data.end_time = (data.end_time||"").trim();
-  data.apartment = (data.apartment||"").trim();
-  data.resident_name = (data.resident_name||"").trim();
   data.cups = num(data.cups); data.forks=num(data.forks); data.knives=num(data.knives);
   data.spoons=num(data.spoons); data.plates=num(data.plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
 
-  const editingId = form.dataset.editing || null;
+  const editingId = $("#party-form").dataset.editing;
   try {
     if (editingId){ await updateParty(editingId, data); }
     else { await createParty({ ...data, created_at: Date.now() }); }
     $("#party-dialog").close();
-    toast("Salvo.");
+    await loadParties(); renderAll(); toast("Salvo.");
   } catch { err("Não foi possível salvar."); }
 }
 
-/* ========= Finalizar ========= */
+/* Finalizar */
 let currentFinalizeId = null;
 
 function openFinalize(p){
@@ -418,7 +362,7 @@ async function saveFinalizeFromForm(){
   const data = Object.fromEntries(new FormData(f).entries());
   const patch = {
     status: data.status,
-    occurrence_notes: (data.occurrence_notes||"").trim(),
+    occurrence_notes: data.occurrence_notes || "",
     broken_cups:   num(data.broken_cups),
     broken_forks:  num(data.broken_forks),
     broken_knives: num(data.broken_knives),
@@ -430,11 +374,11 @@ async function saveFinalizeFromForm(){
     await updateParty(currentFinalizeId, patch);
     $("#finalize-dialog").close();
     currentFinalizeId = null;
-    toast("Festa finalizada.");
+    await loadParties(); renderAll(); toast("Festa finalizada.");
   } catch { err("Não foi possível salvar a finalização."); }
 }
 
-/* ========= Ver & Convidados ========= */
+/* Ver & Convidados */
 function openView(p){
   const el = $("#view-content");
   const guests = (p.guests||[]).map(g=>`<span class="chip">${esc(g)}</span>`).join(" ");
@@ -462,11 +406,11 @@ async function openGuests(p){
   const list = prompt("Edite os convidados (separe por ponto e vírgula ';'):", (p.guests||[]).join("; "));
   if (list===null) return;
   const guests = list.split(";").map(s=>s.trim()).filter(Boolean);
-  try { await updateParty(p.id, { guests }); toast("Convidados atualizados."); }
+  try { await updateParty(p.id, { guests }); await loadParties(); renderAll(); toast("Convidados atualizados."); }
   catch { err("Não foi possível atualizar convidados."); }
 }
 
-/* ========= Lembretes ========= */
+/* Lembretes */
 function requestNotify(){
   if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
   Notification.requestPermission().then((perm)=>{
@@ -474,8 +418,31 @@ function requestNotify(){
   });
 }
 function startReminderLoop(){ setInterval(checkReminders, 60*1000); checkReminders(); }
-const notifiedOnce = new Set(JSON.parse(localStorage.getItem("notified_keys") || "[]"));
-function persistNotified(){ localStorage.setItem("notified_keys", JSON.stringify([...notifiedOnce])); }
 function checkReminders(){
   if (!("Notification" in window) || Notification.permission!=="granted") return;
-  con
+  const today = new Date();
+  state.parties.forEach(p=>{
+    if (!p.date) return;
+    const d = new Date(p.date+"T00:00:00");
+    const diffDays = Math.ceil((d - today)/(1000*60*60*24));
+    if (diffDays===3) maybeNotify(p,"Festa em 3 dias");
+    if (diffDays===1) maybeNotify(p,"Festa amanhã");
+  });
+}
+const notifiedOnce = new Set();
+function maybeNotify(p, title){
+  const key = title+"_"+p.id;
+  if (notifiedOnce.has(key)) return;
+  notifiedOnce.add(key);
+  new Notification(title, { body: `${p.date} • ${p.hall} • ${p.apartment} - ${p.resident_name}` });
+}
+
+/* Util */
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; setTimeout(()=>t.hidden=true,2000); }
+function err(msg){ const e=$("#errbox"); e.textContent=msg; e.hidden=false; setTimeout(()=>e.hidden=true,2500); }
+function esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+function num(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
+
+init();
