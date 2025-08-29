@@ -38,7 +38,10 @@
         <label>Senha
           <input type="password" name="password" required minlength="6" placeholder="••••••••">
         </label>
-        <button class="btn primary" id="btn-login">Entrar</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn primary" id="btn-login">Entrar</button>
+          <button type="button" class="btn ghost" id="btn-install">Instalar no celular</button>
+        </div>
       </form>
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
@@ -62,6 +65,9 @@
           <button id="cal-next" class="btn">▶</button>
         </header>
         <div id="cal-grid" class="cal-grid"></div>
+        <p class="tiny muted" style="margin-top:8px">
+          <span class="dot dot-has"></span> indica que há festa nesse dia.
+        </p>
       </section>
 
       <!-- Filtros -->
@@ -86,7 +92,7 @@
       </div>
     </section>
 
-    <!-- Dialog Nova/Editar -->
+    <!-- Dialog Nova/Editar (SEM quebrados aqui) -->
     <dialog id="party-dialog"><form id="party-form" class="form">
       <header><h3 id="dialog-title">Nova Festa</h3></header>
 
@@ -107,16 +113,6 @@
         </div>
       </fieldset>
 
-      <fieldset><legend>Materiais quebrados (após o evento)</legend>
-        <div class="grid five">
-          <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
-          <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
-          <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
-          <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
-          <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
-        </div>
-      </fieldset>
-
       <div class="grid two">
         <label>Apto <input type="text" name="apartment" required></label>
         <label>Morador <input type="text" name="resident_name" required></label>
@@ -132,10 +128,41 @@
       </menu>
     </form></dialog>
 
+    <!-- Dialog DANOS (quebrados, só depois da festa) -->
+    <dialog id="damage-dialog"><form id="damage-form" class="form">
+      <header><h3>Registrar Danos</h3></header>
+      <p class="tiny muted">Use este formulário apenas após a festa terminar.</p>
+      <div class="grid five">
+        <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
+        <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
+        <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
+        <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
+        <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
+      </div>
+      <menu>
+        <button id="btn-damage-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-damage-save" class="btn primary">Salvar danos</button>
+      </menu>
+    </form></dialog>
+
     <!-- Dialog Visualizar -->
     <dialog id="view-dialog">
       <div id="view-content"></div>
       <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
+    </dialog>
+
+    <!-- Dialog Instalar app (instruções) -->
+    <dialog id="install-dialog">
+      <div class="card">
+        <h3>Instalar no celular</h3>
+        <p class="tiny">Passos rápidos:</p>
+        <ul class="tiny">
+          <li><strong>Android (Chrome):</strong> toque em ⋮ e escolha <em>Adicionar à tela inicial</em>.</li>
+          <li><strong>iPhone (Safari):</strong> toque em <em>Compartilhar</em> → <em>Adicionar à Tela de Início</em>.</li>
+        </ul>
+        <p class="tiny muted">Se aparecer uma pergunta do navegador para “Instalar app”, confirme.</p>
+      </div>
+      <menu><button id="btn-install-close" class="btn">Fechar</button></menu>
     </dialog>
 
     <button id="fab-new" class="fab" hidden>＋</button>
@@ -143,6 +170,6 @@
     <div id="errbox" class="errbox" hidden></div>
   </main>
 
-  <footer class="footer"><small>Uso interno — Banco: Firestore (sem anexos).</small></footer>
+  <footer class="footer"><small>Uso interno — Firestore (sem anexos).</small></footer>
 </body>
 </html>
