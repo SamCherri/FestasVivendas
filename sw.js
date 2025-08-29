@@ -1,10 +1,10 @@
 // sw.js — cache leve (instalação do PWA)
-const CACHE = "festas-v1";
+const CACHE = "festas-v3"; // << trocado para v3 para forçar atualização
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css",
-  "./app.js",
+  "./style.css?v=mobile2",
+  "./app.js?v=mobile2",
   "./config.js",
   "./manifest.webmanifest",
   "./favicon.svg"
@@ -23,7 +23,6 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // Network-first, fallback para cache
   e.respondWith(
     fetch(e.request).then((res) => {
       const clone = res.clone();
