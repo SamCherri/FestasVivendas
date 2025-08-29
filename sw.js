@@ -1,10 +1,11 @@
-// sw.js — cache leve (instalação do PWA)
-const CACHE = "festas-v3"; // << trocado para v3 para forçar atualização
+// sw.js — cache simples (PWA) — sem tema claro/escuro
+const CACHE = "festas-stable-1"; // mude esse nome quando publicar de novo
+
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=mobile2",
-  "./app.js?v=mobile2",
+  "./style.css?v=stable1",
+  "./app.js",
   "./config.js",
   "./manifest.webmanifest",
   "./favicon.svg"
