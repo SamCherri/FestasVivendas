@@ -1,7 +1,7 @@
 // app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
 
-// Firebase direto da web
+// Firebase (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -26,20 +26,14 @@ let state = {
   parties: []
 };
 
-let deferredPrompt = null; // para instalar app
-
+let deferredPrompt = null; // instalar app
 document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
-  // PWA: registra o service worker (necessário para instalar como app)
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(()=>{});
-  }
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-  });
+  // PWA
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
 
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -59,7 +53,7 @@ function ensureHelpers() {
   style.textContent = `
     .center-v{display:grid;min-height:60vh;place-items:center}
     .action-btn{margin-right:6px}
-    .cal-badge{margin-top:6px; display:block; text-align:center}
+    .cal-badge{position:absolute;right:6px;bottom:6px}
   `;
   document.head.appendChild(style);
 }
@@ -83,17 +77,11 @@ function bindEvents() {
     const email = $("#login-form [name=email]").value.trim();
     const pass  = $("#login-form [name=password]").value;
     if (!email || !pass) return err("Preencha e-mail e senha.");
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      toast("Login ok.");
-    } catch (e) {
-      err("Falha no login. Confira e-mail e senha.");
-    }
+    try { await signInWithEmailAndPassword(auth, email, pass); toast("Login ok."); }
+    catch { err("Falha no login. Confira e-mail e senha."); }
   });
 
-  $("#btn-logout")?.addEventListener("click", async () => {
-    await signOut(auth); toast("Saiu.");
-  });
+  $("#btn-logout")?.addEventListener("click", async () => { await signOut(auth); toast("Saiu."); });
 
   // Instalar app
   $("#btn-install")?.addEventListener("click", async () => {
@@ -148,28 +136,15 @@ async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), d
 async function deleteParty(id) { await deleteDoc(doc(db, "parties", id)); }
 
 /* ========= Calendário & KPIs ========= */
-function shiftMonth(n) {
-  const d = new Date(state.monthBase);
-  d.setMonth(d.getMonth() + n);
-  state.monthBase = d;
-  renderCalendar();
-}
-
-function renderAll() {
-  renderCalendar();
-  renderTable();
-  updateKPIs();
-}
+function shiftMonth(n) { const d = new Date(state.monthBase); d.setMonth(d.getMonth()+n); state.monthBase = d; renderCalendar(); }
+function renderAll() { renderCalendar(); renderTable(); updateKPIs(); }
 
 function updateKPIs() {
   const todayStr = fmtDate(new Date());
-  const todayCount = state.parties.filter(p => p.date === todayStr).length;
   const fourWeeks = new Date(); fourWeeks.setDate(fourWeeks.getDate()+28);
-  const upcoming = state.parties.filter(p => new Date(p.date) > new Date() && new Date(p.date) <= fourWeeks).length;
-  const guests = state.parties.reduce((acc,p)=> acc + (Array.isArray(p.guests)?p.guests.length:0), 0);
-  $("#kpi-today").textContent = todayCount;
-  $("#kpi-upcoming").textContent = upcoming;
-  $("#kpi-guests").textContent = guests;
+  $("#kpi-today").textContent = state.parties.filter(p => p.date === todayStr).length;
+  $("#kpi-upcoming").textContent = state.parties.filter(p => new Date(p.date) > new Date() && new Date(p.date) <= fourWeeks).length;
+  $("#kpi-guests").textContent = state.parties.reduce((acc,p)=> acc + (Array.isArray(p.guests)?p.guests.length:0), 0);
 }
 
 function renderCalendar() {
@@ -241,10 +216,10 @@ function renderTable() {
 
   list.forEach(p => {
     const tr = document.createElement("tr");
-    const showFinalize = eventEnded(p); // só depois que terminar
+    const showFinalize = eventEnded(p);
 
     const statusBadge = p.status
-      ? `<span class="badge">${p.status === "ok" ? "OK" : "Ocorrência"}</span>`
+      ? `<span class="badge ${p.status === "ok" ? "ok" : "warn"}">${p.status === "ok" ? "OK" : "Ocorrência"}</span>`
       : "";
 
     tr.innerHTML = `
@@ -333,7 +308,7 @@ async function savePartyFromForm(){
     else { await createParty({ ...data, created_at: Date.now() }); }
     $("#party-dialog").close();
     await loadParties(); renderAll(); toast("Salvo.");
-  } catch (e) { err("Não foi possível salvar."); }
+  } catch { err("Não foi possível salvar."); }
 }
 
 /* ========= Finalizar ========= */
@@ -372,7 +347,7 @@ async function saveFinalizeFromForm(){
     $("#finalize-dialog").close();
     currentFinalizeId = null;
     await loadParties(); renderAll(); toast("Festa finalizada.");
-  } catch (e) { err("Não foi possível salvar a finalização."); }
+  } catch { err("Não foi possível salvar a finalização."); }
 }
 
 /* ========= Ver & Convidados ========= */
@@ -386,12 +361,13 @@ function openView(p){
     <div class="party-card">
       <div class="party-head">
         <strong>${p.date} • ${esc(p.hall||"")}</strong>
-        <span class="badge">${esc(p.apartment||"")} — ${esc(p.resident_name||"")}</span>
+        <span class="badge ${p.status === "ok" ? "ok" : p.status === "occurrence" ? "warn" : ""}">
+          ${p.status ? (p.status === "ok" ? "OK" : "Ocorrência") : "Sem status"}
+        </span>
       </div>
       <div class="muted tiny">Início: ${p.start_time||"-"} • Término: ${p.end_time||"-"}</div>
       <div class="muted tiny">Materiais: ${matSummary(p)}</div>
       <div class="muted tiny">Convidados: ${guests||"<em>—</em>"}</div>
-      <div class="muted tiny">Status: ${status}</div>
       <div class="muted tiny">Notas: ${notes}</div>
       <div class="muted tiny">Quebrados: ${brk || "—"}</div>
     </div>
