@@ -132,3 +132,39 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
   .cal-hit{ font-size: 1.6rem }
   .cal-dot{ width: 14px; height: 14px }
 }
+/* ====== CELULARES GRANDES (ex.: Moto G 200) ======
+   Mais espaço = células do calendário e fontes maiores  */
+@media (min-width: 480px) and (max-width: 900px) and (min-height: 780px){
+  /* base maior */
+  :root{
+    --text: 21px;
+    --text-lg: 23px;
+    --text-xl: 30px;
+  }
+
+  /* container usa quase a tela toda */
+  .container{ max-width: 1000px; padding: 0 14px }
+
+  /* métricas mais destacadas */
+  .metrics{ gap: 14px }
+  .metric{ padding: 16px }
+  .metric .v{ font-size: clamp(30px, 9vw, 36px) }
+
+  /* calendário ocupa mais espaço visual */
+  .calendar .cal-header{ margin-bottom: 12px }
+  .cal-grid{ gap: 12px }                  /* mais espaçamento entre dias */
+  .cal-cell{ border-radius: 18px }        /* cantos um pouco maiores */
+  .cal-hit{ font-size: 1.7rem }           /* número do dia maior (~27px) */
+  .cal-dot{ width: 14px; height: 14px }   /* bolinha maior */
+
+  /* botões mais confortáveis */
+  .btn{ padding: 16px 22px; font-size: 1.1rem }
+  .fab{ width: 68px; height: 68px; font-size: 32px }
+}
+
+/* ====== MUITO ALTA (phablet/paisagem) — empurra ainda mais o calendário */
+@media (min-width: 600px) and (max-width: 900px) and (min-height: 900px){
+  .cal-grid{ gap: 14px }
+  .cal-hit{ font-size: 1.9rem }          /* ~30px */
+  .cal-dot{ width: 15px; height: 15px }
+}
