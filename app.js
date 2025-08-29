@@ -9,6 +9,28 @@ import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 
+/* ===== Tema claro/escuro ===== */
+function getSystemPrefers(){
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+function getSavedTheme(){ return localStorage.getItem('theme'); }
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('btn-theme');
+  if (btn) btn.textContent = theme === 'light' ? '☀️' : '🌙';
+}
+function initTheme(){
+  const saved = getSavedTheme();
+  const theme = saved || getSystemPrefers();
+  applyTheme(theme);
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+}
+
 /* ========= Firebase ========= */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -23,13 +45,17 @@ let state = {
   view: "calendar" // "calendar" | "list"
 };
 
-let deferredPrompt = null;
+let deferredPrompt = null; // instalar app
 document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
+  // SW para PWA
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
+
+  initTheme();
+  document.addEventListener('click', (e)=>{ if (e.target && e.target.id === 'btn-theme') toggleTheme(); });
 
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -80,11 +106,11 @@ function bindEvents() {
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); });
 
-  // Instalar app
+  // Instalar app (PWA)
   $("#btn-install")?.addEventListener("click", async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } else { $("#install-dialog").showModal(); } });
   $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
 
-  // Ações
+  // Ações gerais
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
   $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
@@ -106,7 +132,6 @@ function showView(view){
   state.view = view;
   $("#sec-calendar").hidden = view !== "calendar";
   $("#sec-list").hidden = view !== "list";
-  // rola pro topo da área
   document.querySelector(view==="calendar" ? "#sec-calendar" : "#sec-list").scrollIntoView({behavior:"smooth"});
 }
 
@@ -160,7 +185,7 @@ function renderCalendar(){
   grid.innerHTML = "";
 
   const start = new Date(base);
-  const startWeekday = (start.getDay()+6)%7; // seg = 0
+  const startWeekday = (start.getDay()+6)%7; // seg=0
   start.setDate(start.getDate() - startWeekday);
 
   for (let i=0;i<42;i++){
@@ -198,7 +223,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela ========= */
+/* ========= Tabela (com versão mobile em cards) ========= */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -221,27 +246,38 @@ function renderTable(){
 
   list.forEach(p=>{
     const tr = document.createElement("tr");
+
     const showFinalize = eventEnded(p);
     const statusBadge = p.status ? `<span class="badge ${p.status==="ok"?"ok":"warn"}">${p.status==="ok"?"OK":"Ocorrência"}</span>` : "";
 
-    tr.innerHTML = `
-      <td>${p.date}</td>
-      <td>${p.start_time||""}</td>
-      <td>${p.end_time||""}</td>
-      <td>${p.hall||""}</td>
-      <td>${p.apartment||""}</td>
-      <td>${p.resident_name||""}</td>
-      <td>${matSummary(p)}</td>
-      <td>
+    const cells = [
+      ["Data",        p.date],
+      ["Início",      p.start_time||""],
+      ["Término",     p.end_time||""],
+      ["Salão",       p.hall||""],
+      ["Apto",        p.apartment||""],
+      ["Morador",     p.resident_name||""],
+      ["Materiais",   matSummary(p)],
+      ["Ações", `
         ${statusBadge}
-        <button class="btn tiny action-btn" data-act="view">Ver</button>
-        <button class="btn tiny action-btn" data-act="edit">Editar</button>
-        ${showFinalize?'<button class="btn tiny action-btn" data-act="finalize">Finalizar</button>':''}
-        ${p.status?'<button class="btn tiny action-btn" data-act="refinalize">Editar finalização</button>':''}
-        <button class="btn tiny action-btn" data-act="guests">Convidados</button>
-        <button class="btn tiny danger action-btn" data-act="del">Apagar</button>
-      </td>
-    `;
+        <div class="row-actions">
+          <button class="btn tiny action-btn" data-act="view">Ver</button>
+          <button class="btn tiny action-btn" data-act="edit">Editar</button>
+          ${showFinalize?'<button class="btn tiny action-btn" data-act="finalize">Finalizar</button>':''}
+          ${p.status?'<button class="btn tiny action-btn" data-act="refinalize">Editar finalização</button>':''}
+          <button class="btn tiny action-btn" data-act="guests">Convidados</button>
+          <button class="btn tiny danger action-btn" data-act="del">Apagar</button>
+        </div>
+      `]
+    ];
+
+    cells.forEach(([label, html])=>{
+      const td = document.createElement("td");
+      td.setAttribute("data-label", label);
+      td.innerHTML = html;
+      tr.appendChild(td);
+    });
+
     tr.querySelector('[data-act="view"]').addEventListener("click", ()=> openView(p));
     tr.querySelector('[data-act="edit"]').addEventListener("click", ()=> openPartyDialog(p));
     tr.querySelector('[data-act="guests"]').addEventListener("click", ()=> openGuests(p));
@@ -251,6 +287,7 @@ function renderTable(){
       if (!confirm("Apagar esta festa?")) return;
       await deleteParty(p.id); await loadParties(); renderAll(); toast("Apagado.");
     });
+
     tbody.appendChild(tr);
   });
 }
@@ -269,13 +306,41 @@ function matSummary(p){
 /* ========= Nova/Editar ========= */
 function openPartyDialog(existing=null){
   const dlg = $("#party-dialog");
-  const form = $("#party-form");
-  form.reset();
-  form.dataset.editing = existing ? existing.id : "";
-  $("#dialog-title").textContent = existing ? "Editar Festa" : "Nova Festa";
-
+  dlg.innerHTML = `
+    <form id="party-form" class="form">
+      <header><h3 id="dialog-title">${existing?'Editar Festa':'Nova Festa'}</h3></header>
+      <div class="grid two">
+        <label>Data <input type="date" name="date" required></label>
+        <label>Salão <select name="hall" required></select></label>
+        <label>Início <input type="time" name="start_time" required></label>
+        <label>Término <input type="time" name="end_time"></label>
+      </div>
+      <fieldset><legend>Materiais (solicitados)</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="cups" min="0" value="0"></label>
+          <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
+          <label>Facas <input type="number" name="knives" min="0" value="0"></label>
+          <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
+          <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
+        </div>
+      </fieldset>
+      <div class="grid two">
+        <label>Apto <input type="text" name="apartment" required></label>
+        <label>Morador <input type="text" name="resident_name" required></label>
+      </div>
+      <label>Convidados
+        <textarea name="guests_text" rows="5" placeholder="Nome 1; Nome 2; ..."></textarea>
+      </label>
+      <menu>
+        <button id="btn-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-save" class="btn primary">Salvar</button>
+      </menu>
+    </form>
+  `;
+  // Preenche selects e valores
   fillHallSelects();
-
+  const form = dlg.querySelector("#party-form");
+  form.dataset.editing = existing ? existing.id : "";
   if (existing){
     form.date.value = existing.date || "";
     form.hall.value = existing.hall || "";
@@ -290,8 +355,9 @@ function openPartyDialog(existing=null){
     form.plates.value = existing.plates||0;
     form.guests_text.value = (existing.guests||[]).join("; ");
   }
-
   dlg.showModal();
+  dlg.querySelector("#btn-cancel").addEventListener("click", ()=> dlg.close());
+  dlg.querySelector("#btn-save").addEventListener("click", (e)=>{ e.preventDefault(); savePartyFromForm(); });
 }
 
 async function savePartyFromForm(){
@@ -301,7 +367,7 @@ async function savePartyFromForm(){
   data.spoons=num(data.spoons); data.plates=num(data.plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
 
-  const editingId = $("#party-form").dataset.editing;
+  const editingId = form.dataset.editing;
   try {
     if (editingId){ await updateParty(editingId, data); }
     else { await createParty({ ...data, created_at: Date.now() }); }
@@ -315,16 +381,37 @@ let currentFinalizeId = null;
 
 function openFinalize(p){
   currentFinalizeId = p.id;
-  const f = $("#finalize-form");
-  f.reset();
-  if (p.status === "occurrence") f.querySelector('[value="occurrence"]').checked = true;
-  if (p.occurrence_notes) f.occurrence_notes.value = p.occurrence_notes;
-  f.broken_cups.value   = num(p.broken_cups);
-  f.broken_forks.value  = num(p.broken_forks);
-  f.broken_knives.value = num(p.broken_knives);
-  f.broken_spoons.value = num(p.broken_spoons);
-  f.broken_plates.value = num(p.broken_plates);
-  $("#finalize-dialog").showModal();
+  const dlg = $("#finalize-dialog");
+  dlg.innerHTML = `
+    <form id="finalize-form" class="form">
+      <header><h3>Finalizar festa</h3></header>
+      <p class="tiny muted">Use este formulário somente depois que a festa terminou.</p>
+      <fieldset>
+        <legend>Resultado</legend>
+        <label><input type="radio" name="status" value="ok" ${p.status!=='occurrence'?'checked':''}> Terminou bem</label>
+        <label><input type="radio" name="status" value="occurrence" ${p.status==='occurrence'?'checked':''}> Teve ocorrência</label>
+      </fieldset>
+      <label>Notas (opcional)
+        <textarea name="occurrence_notes" rows="4" placeholder="Descreva a ocorrência"></textarea>
+      </label>
+      <fieldset><legend>Itens quebrados (opcional)</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="broken_cups" min="0" value="${num(p.broken_cups)}"></label>
+          <label>Garfos <input type="number" name="broken_forks" min="0" value="${num(p.broken_forks)}"></label>
+          <label>Facas <input type="number" name="broken_knives" min="0" value="${num(p.broken_knives)}"></label>
+          <label>Colheres <input type="number" name="broken_spoons" min="0" value="${num(p.broken_spoons)}"></label>
+          <label>Pratos <input type="number" name="broken_plates" min="0" value="${num(p.broken_plates)}"></label>
+        </div>
+      </fieldset>
+      <menu>
+        <button id="btn-finalize-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-finalize-save" class="btn primary">Salvar finalização</button>
+      </menu>
+    </form>
+  `;
+  dlg.showModal();
+  dlg.querySelector("#btn-finalize-cancel").addEventListener("click", ()=> dlg.close());
+  dlg.querySelector("#btn-finalize-save").addEventListener("click", (e)=>{ e.preventDefault(); saveFinalizeFromForm(); });
 }
 
 async function saveFinalizeFromForm(){
@@ -353,12 +440,11 @@ async function saveFinalizeFromForm(){
 function openView(p){
   const el = $("#view-content");
   const guests = (p.guests||[]).map(g=>`<span class="chip">${esc(g)}</span>`).join(" ");
-  const status = p.status ? (p.status === "ok" ? "Terminou bem" : "Teve ocorrência") : "—";
   const notes = p.occurrence_notes ? esc(p.occurrence_notes) : "—";
   const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
   el.innerHTML = `
-    <div class="party-card">
-      <div class="party-head">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
         <strong>${p.date} • ${esc(p.hall||"")}</strong>
         <span class="badge ${p.status === "ok" ? "ok" : p.status === "occurrence" ? "warn" : ""}">
           ${p.status ? (p.status === "ok" ? "OK" : "Ocorrência") : "Sem status"}
@@ -385,36 +471,4 @@ async function openGuests(p){
 /* ========= Lembretes ========= */
 function requestNotify(){
   if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
-  Notification.requestPermission().then((perm)=>{
-    if (perm==="granted") toast("Lembretes ativados."); else err("Permissão negada.");
-  });
-}
-function startReminderLoop(){ setInterval(checkReminders, 60*1000); checkReminders(); }
-function checkReminders(){
-  if (!("Notification" in window) || Notification.permission!=="granted") return;
-  const today = new Date();
-  state.parties.forEach(p=>{
-    if (!p.date) return;
-    const d = new Date(p.date+"T00:00:00");
-    const diffDays = Math.ceil((d - today)/(1000*60*60*24));
-    if (diffDays===3) maybeNotify(p,"Festa em 3 dias");
-    if (diffDays===1) maybeNotify(p,"Festa amanhã");
-  });
-}
-const notifiedOnce = new Set();
-function maybeNotify(p, title){
-  const key = title+"_"+p.id;
-  if (notifiedOnce.has(key)) return;
-  notifiedOnce.add(key);
-  new Notification(title, { body: `${p.date} • ${p.hall} • ${p.apartment} - ${p.resident_name}` });
-}
-
-/* ========= Util ========= */
-function fmtDate(d){ return d.toISOString().slice(0,10); }
-function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; setTimeout(()=>t.hidden=true,2000); }
-function err(msg){ const e=$("#errbox"); e.textContent=msg; e.hidden=false; setTimeout(()=>e.hidden=true,2500); }
-function esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
-function num(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
-
-init();
+  Notification.requestPermission().then((pe
