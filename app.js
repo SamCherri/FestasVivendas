@@ -83,17 +83,12 @@ function bindEvents() {
   // Ações
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
-  $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
-  $("#btn-finalize-cancel")?.addEventListener("click", () => $("#finalize-dialog").close());
-
-  $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
-  $("#btn-finalize-save")?.addEventListener("click", (e) => { e.preventDefault(); saveFinalizeFromForm(); });
 
   // Calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
   $("#cal-next")?.addEventListener("click", () => { shiftMonth(1); });
 
-  // Filtros
+  // Filtros (lista)
   $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
   $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
 }
@@ -193,7 +188,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela ========= */
+/* ========= Tabela (responsiva p/ “cards” no celular) ========= */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -220,14 +215,14 @@ function renderTable(){
     const statusBadge = p.status ? `<span class="badge ${p.status==="ok"?"ok":"warn"}">${p.status==="ok"?"OK":"Ocorrência"}</span>` : "";
 
     tr.innerHTML = `
-      <td>${p.date}</td>
-      <td>${p.start_time||""}</td>
-      <td>${p.end_time||""}</td>
-      <td>${p.hall||""}</td>
-      <td>${p.apartment||""}</td>
-      <td>${p.resident_name||""}</td>
-      <td>${matSummary(p)}</td>
-      <td>
+      <td data-th="Data">${p.date}</td>
+      <td data-th="Início">${p.start_time||""}</td>
+      <td data-th="Término">${p.end_time||""}</td>
+      <td data-th="Salão">${p.hall||""}</td>
+      <td data-th="Apto">${p.apartment||""}</td>
+      <td data-th="Morador">${p.resident_name||""}</td>
+      <td data-th="Materiais">${matSummary(p)}</td>
+      <td data-th="Ações">
         ${statusBadge}
         <button class="btn tiny action-btn" data-act="view">Ver</button>
         <button class="btn tiny action-btn" data-act="edit">Editar</button>
@@ -246,6 +241,7 @@ function renderTable(){
       if (!confirm("Apagar esta festa?")) return;
       await deleteParty(p.id); await loadParties(); renderAll(); toast("Apagado.");
     });
+
     tbody.appendChild(tr);
   });
 }
@@ -403,8 +399,8 @@ function openView(p){
   const notes = p.occurrence_notes ? esc(p.occurrence_notes) : "—";
   const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
   el.innerHTML = `
-    <div class="party-card">
-      <div class="party-head">
+    <div class="party-card card">
+      <div class="party-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <strong>${p.date} • ${esc(p.hall||"")}</strong>
         <span class="badge ${p.status === "ok" ? "ok" : p.status === "occurrence" ? "warn" : ""}">
           ${p.status ? (p.status === "ok" ? "OK" : "Ocorrência") : "Sem status"}
