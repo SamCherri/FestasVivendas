@@ -136,50 +136,33 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
   .drawer{ width: 94vw }
 }
 
-/* ====== CELULARES GRANDES (ex.: Moto G 200) ====== */
-@media (min-width: 480px) and (max-width: 900px) and (min-height: 780px){
-  :root{
-    --text: 21px;
-    --text-lg: 23px;
-    --text-xl: 30px;
-  }
-  .container{ max-width: 1000px; padding: 0 14px }
-  .metrics{ gap: 14px }
-  .metric{ padding: 16px }
-  .metric .v{ font-size: clamp(30px, 9vw, 36px) }
-  .calendar .cal-header{ margin-bottom: 12px }
-  .cal-grid{ gap: 12px }
-  .cal-cell{ border-radius: 18px }
-  .cal-hit{ font-size: 1.7rem }
-  .cal-dot{ width: 14px; height: 14px }
-  .btn{ padding: 16px 22px; font-size: 1.1rem }
-  .fab{ width: 68px; height: 68px; font-size: 32px }
-}
-
-/* ====== MUITO ALTA (phablet/paisagem) ====== */
-@media (min-width: 600px) and (max-width: 900px) and (min-height: 900px){
-  .cal-grid{ gap: 14px }
-  .cal-hit{ font-size: 1.9rem }
-  .cal-dot{ width: 15px; height: 15px }
-}
-
-/* ====== MODO RETRATO COM LETRA GIGANTE (~3×) ====== */
-@media screen and (max-width: 900px) and (orientation: portrait) {
+/* ====== CELULARES GRANDES (até 900px de largura) — LETRA GIGANTE (~3×) ====== */
+@media screen and (max-width: 900px) {
   :root{
     --text: 26px;      /* corpo */
     --text-lg: 30px;   /* subtítulos */
     --text-xl: 36px;   /* títulos/números */
   }
+
+  /* calendário */
   .cal-grid{ gap: 14px }
   .cal-cell{ border-radius: 20px }
   .cal-hit{ font-size: 2.2rem; font-weight: 800 }  /* ~35px */
   .cal-dot{ width: 18px; height: 18px }
+
+  /* métricas */
   .metric{ padding: 20px }
   .metric .k{ font-size: 1.4rem }
   .metric .v{ font-size: 2.4rem }
+
+  /* botões */
   .btn{ padding: 20px 26px; font-size: 1.3rem; font-weight: 700 }
   .fab{ width: 80px; height: 80px; font-size: 38px }
+
+  /* menu lateral */
   .drawer-item{ font-size: 1.4rem; padding: 16px }
+
+  /* tabela */
   .table{ font-size: 1.3rem }
   .table td::before{ min-width: 140px }
 }
