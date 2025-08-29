@@ -7,6 +7,7 @@
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0B74B8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
   <style>[hidden]{display:none!important}</style>
@@ -16,11 +17,12 @@
 <body>
   <!-- Topo minimalista -->
   <header class="topbar">
-    <button id="btn-menu" class="btn ghost icon">☰</button>
+    <button id="btn-menu" class="btn ghost icon" aria-label="Menu">☰</button>
     <div class="brand">
       <img src="favicon.svg" alt="" width="24" height="24" />
       <span>Vivendas de La Salle</span>
     </div>
+    <button id="btn-theme" class="btn ghost icon" aria-label="Mudar tema" title="Mudar tema">🌙</button>
   </header>
 
   <!-- Menu lateral -->
@@ -45,9 +47,16 @@
     <section id="login-section" class="card center-v">
       <h1>Acesso interno</h1>
       <form id="login-form" class="form">
-        <label>E-mail <input name="email" type="email" required></label>
-        <label>Senha <input type="password" name="password" required minlength="6"></label>
-        <button class="btn primary" id="btn-login">Entrar</button>
+        <label>E-mail
+          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
+        </label>
+        <label>Senha
+          <input type="password" name="password" required minlength="6" placeholder="••••••••">
+        </label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn primary" id="btn-login">Entrar</button>
+          <button type="button" class="btn ghost" id="btn-install">Instalar no celular</button>
+        </div>
       </form>
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
@@ -61,6 +70,7 @@
           <div class="metric"><div class="k">Próx. 4 semanas</div><div class="v" id="kpi-upcoming">0</div></div>
           <div class="metric"><div class="k">Convidados</div><div class="v" id="kpi-guests">0</div></div>
         </section>
+
         <section class="card calendar">
           <header class="cal-header">
             <button id="cal-prev" class="btn">◀</button>
@@ -68,7 +78,9 @@
             <button id="cal-next" class="btn">▶</button>
           </header>
           <div id="cal-grid" class="cal-grid"></div>
-          <p class="tiny muted">A <strong>bolinha verde</strong> marca que há festa nesse dia.</p>
+          <p class="tiny muted" style="margin-top:8px">
+            A <strong>bolinha verde</strong> marca que há festa nesse dia.
+          </p>
         </section>
       </section>
 
@@ -80,10 +92,14 @@
           <button type="submit" class="btn">Filtrar</button>
           <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
         </form>
+
         <div class="card table-wrapper">
           <table class="table">
             <thead>
-              <tr><th>Data</th><th>Início</th><th>Término</th><th>Salão</th><th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th></tr>
+              <tr>
+                <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
+                <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
+              </tr>
             </thead>
             <tbody id="tbody-parties"></tbody>
           </table>
@@ -91,10 +107,82 @@
       </section>
     </section>
 
-    <!-- Diálogos -->
-    <dialog id="party-dialog"></dialog>
-    <dialog id="view-dialog"></dialog>
-    <dialog id="finalize-dialog"></dialog>
+    <!-- Dialog Nova/Editar -->
+    <dialog id="party-dialog"><form id="party-form" class="form">
+      <header><h3 id="dialog-title">Nova Festa</h3></header>
+      <div class="grid two">
+        <label>Data <input type="date" name="date" required></label>
+        <label>Salão <select name="hall" required></select></label>
+        <label>Início <input type="time" name="start_time" required></label>
+        <label>Término <input type="time" name="end_time"></label>
+      </div>
+      <fieldset><legend>Materiais (solicitados)</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="cups" min="0" value="0"></label>
+          <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
+          <label>Facas <input type="number" name="knives" min="0" value="0"></label>
+          <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
+          <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
+        </div>
+      </fieldset>
+      <div class="grid two">
+        <label>Apto <input type="text" name="apartment" required></label>
+        <label>Morador <input type="text" name="resident_name" required></label>
+      </div>
+      <label>Convidados
+        <textarea name="guests_text" rows="5" placeholder="Nome 1; Nome 2; ..."></textarea>
+      </label>
+      <menu>
+        <button id="btn-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-save" class="btn primary">Salvar</button>
+      </menu>
+    </form></dialog>
+
+    <!-- Dialog FINALIZAR -->
+    <dialog id="finalize-dialog"><form id="finalize-form" class="form">
+      <header><h3>Finalizar festa</h3></header>
+      <p class="tiny muted">Use este formulário somente depois que a festa terminou.</p>
+      <fieldset>
+        <legend>Resultado</legend>
+        <label><input type="radio" name="status" value="ok" checked> Terminou bem</label>
+        <label><input type="radio" name="status" value="occurrence"> Teve ocorrência</label>
+      </fieldset>
+      <label>Notas (opcional)
+        <textarea name="occurrence_notes" rows="4" placeholder="Descreva a ocorrência"></textarea>
+      </label>
+      <fieldset><legend>Itens quebrados (opcional)</legend>
+        <div class="grid five">
+          <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
+          <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
+          <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
+          <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
+          <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
+        </div>
+      </fieldset>
+      <menu>
+        <button id="btn-finalize-cancel" type="button" class="btn">Cancelar</button>
+        <button id="btn-finalize-save" class="btn primary">Salvar finalização</button>
+      </menu>
+    </form></dialog>
+
+    <!-- Dialog Ver -->
+    <dialog id="view-dialog">
+      <div id="view-content"></div>
+      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
+    </dialog>
+
+    <!-- Dialog Instalar app -->
+    <dialog id="install-dialog">
+      <div class="card">
+        <h3>Instalar no celular</h3>
+        <p class="tiny">Se o botão “Instalar” aparecer, confirme. Se não, siga:</p>
+        <ul class="tiny">
+          <li><strong>Android (Chrome):</strong> ⋮ → <em>Instalar app</em>.</li>
+          <li><strong>iPhone (Safari):</strong> Compartilhar → <em>Adicionar à Tela de Início</em>.</li>
+        </ul>
+      </div>
+      <menu><button id="btn-install-close" class="btn">Fechar</button></menu>
+    </dialog>
 
     <button id="fab-new" class="fab" hidden>＋</button>
     <div id="toast" class="toast" hidden></div>
