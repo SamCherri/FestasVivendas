@@ -15,7 +15,7 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
-  <!-- Topo minimalista -->
+  <!-- Topo -->
   <header class="topbar">
     <button id="btn-menu" class="btn ghost icon" aria-label="Menu">☰</button>
     <div class="brand">
@@ -36,6 +36,7 @@
       <hr/>
       <button class="drawer-item" id="m-new">➕ Nova Festa</button>
       <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
+      <button class="drawer-item" id="m-install">📲 Instalar no celular</button>
       <button class="drawer-item" id="m-logout">🚪 Sair</button>
     </nav>
   </aside>
@@ -44,22 +45,27 @@
   <main class="container">
     <!-- LOGIN -->
     <section id="login-section" class="card center-v">
-      <h1>Acesso interno</h1>
-      <form id="login-form" class="form">
-        <label>E-mail
-          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
-        </label>
-        <label>Senha
-          <input type="password" name="password" required minlength="6" placeholder="••••••••">
-        </label>
-        <button class="btn primary" id="btn-login">Entrar</button>
-      </form>
-      <p class="muted tiny">Problemas? Contate a administração.</p>
+      <div>
+        <h1>Acesso interno</h1>
+        <form id="login-form" class="form">
+          <label>E-mail
+            <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
+          </label>
+          <label>Senha
+            <input type="password" name="password" required minlength="6" placeholder="••••••••">
+          </label>
+          <button class="btn primary" id="btn-login">Entrar</button>
+        </form>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button id="btn-install" type="button" class="btn ghost">📲 Instalar no celular</button>
+        </div>
+        <p class="muted tiny" style="margin-top:8px">Problemas? Contate a administração.</p>
+      </div>
     </section>
 
     <!-- APP -->
     <section id="app-section" hidden>
-      <!-- TELA: CALENDÁRIO -->
+      <!-- CALENDÁRIO -->
       <section id="sec-calendar">
         <section class="metrics">
           <div class="metric"><div class="k">Hoje</div><div class="v" id="kpi-today">0</div></div>
@@ -80,7 +86,7 @@
         </section>
       </section>
 
-      <!-- TELA: LISTA DE FESTAS -->
+      <!-- LISTA -->
       <section id="sec-list" hidden>
         <form id="filters" class="filters card">
           <label>Data <input type="date" name="date"></label>
@@ -103,78 +109,10 @@
       </section>
     </section>
 
-    <!-- DIALOG: NOVA/EDITAR -->
-    <dialog id="party-dialog"><form id="party-form" class="form">
-      <header><h3 id="dialog-title">Nova Festa</h3></header>
-
-      <div class="grid two">
-        <label>Data <input type="date" name="date" required></label>
-        <label>Salão <select name="hall" required></select></label>
-        <label>Início <input type="time" name="start_time" required></label>
-        <label>Término <input type="time" name="end_time"></label>
-      </div>
-
-      <fieldset><legend>Materiais (solicitados)</legend>
-        <div class="grid five">
-          <label>Copos <input type="number" name="cups" min="0" value="0"></label>
-          <label>Garfos <input type="number" name="forks" min="0" value="0"></label>
-          <label>Facas <input type="number" name="knives" min="0" value="0"></label>
-          <label>Colheres <input type="number" name="spoons" min="0" value="0"></label>
-          <label>Pratos <input type="number" name="plates" min="0" value="0"></label>
-        </div>
-      </fieldset>
-
-      <div class="grid two">
-        <label>Apto <input type="text" name="apartment" required></label>
-        <label>Morador <input type="text" name="resident_name" required></label>
-      </div>
-
-      <label>Convidados
-        <textarea name="guests_text" rows="5" placeholder="Nome 1; Nome 2; ..."></textarea>
-      </label>
-
-      <menu>
-        <button id="btn-cancel" type="button" class="btn">Cancelar</button>
-        <button id="btn-save" class="btn primary">Salvar</button>
-      </menu>
-    </form></dialog>
-
-    <!-- DIALOG: FINALIZAR -->
-    <dialog id="finalize-dialog"><form id="finalize-form" class="form">
-      <header><h3>Finalizar festa</h3></header>
-      <p class="tiny muted">Use este formulário somente depois que a festa terminou.</p>
-
-      <fieldset>
-        <legend>Resultado</legend>
-        <label><input type="radio" name="status" value="ok" checked> Terminou bem</label>
-        <label><input type="radio" name="status" value="occurrence"> Teve ocorrência</label>
-      </fieldset>
-
-      <label>Notas (opcional)
-        <textarea name="occurrence_notes" rows="4" placeholder="Descreva a ocorrência, ex.: prato quebrado, barulho..."></textarea>
-      </label>
-
-      <fieldset><legend>Itens quebrados (opcional)</legend>
-        <div class="grid five">
-          <label>Copos <input type="number" name="broken_cups" min="0" value="0"></label>
-          <label>Garfos <input type="number" name="broken_forks" min="0" value="0"></label>
-          <label>Facas <input type="number" name="broken_knives" min="0" value="0"></label>
-          <label>Colheres <input type="number" name="broken_spoons" min="0" value="0"></label>
-          <label>Pratos <input type="number" name="broken_plates" min="0" value="0"></label>
-        </div>
-      </fieldset>
-
-      <menu>
-        <button id="btn-finalize-cancel" type="button" class="btn">Cancelar</button>
-        <button id="btn-finalize-save" class="btn primary">Salvar finalização</button>
-      </menu>
-    </form></dialog>
-
-    <!-- DIALOG: VER -->
-    <dialog id="view-dialog">
-      <div id="view-content"></div>
-      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
-    </dialog>
+    <!-- DIÁLOGOS -->
+    <dialog id="party-dialog"></dialog>
+    <dialog id="finalize-dialog"></dialog>
+    <dialog id="view-dialog"><div id="view-content"></div><menu><button id="btn-close-view" class="btn">Fechar</button></menu></dialog>
 
     <button id="fab-new" class="fab" hidden>＋</button>
     <div id="toast" class="toast" hidden></div>
