@@ -22,9 +22,11 @@ const db   = getFirestore(app);
 let state = {
   user: null,
   monthBase: new Date(),
-  halls: ["Salão 1", "Salão 2", "Quiosque"],
+  halls: ["Gourmet", "Menor"],   // <- apenas estes dois
   parties: [] // vem do Firestore
 };
+
+let deferredPrompt = null; // possível instalação do app (quando suportado)
 
 document.title = APP_NAME;
 
@@ -36,6 +38,12 @@ function init() {
     if (u) loadParties().then(()=>{ renderAll(); });
   });
 
+  // captura tentativa de instalar (alguns celulares)
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+
   ensureHelpers();
   fillHallSelects();
   bindEvents();
@@ -45,21 +53,25 @@ function init() {
 
 function ensureHelpers() {
   const style = document.createElement("style");
-  style.textContent = `.center-v{display:grid;min-height:60vh;place-items:center}.action-btn{margin-right:6px}`;
+  style.textContent = `
+    .center-v{display:grid;min-height:60vh;place-items:center}
+    .action-btn{margin-right:6px}
+    .cal-badge{margin-top:6px; display:block; text-align:center}
+  `;
   document.head.appendChild(style);
 }
 
 function fillHallSelects() {
   const selects = $$('select[name="hall"]');
   selects.forEach(sel => {
-    const has = Array.from(sel.options).some(o => o.value && o.value !== "");
-    if (!has) {
-      state.halls.forEach(h => {
-        const o = document.createElement("option");
-        o.value = h; o.textContent = h;
-        sel.appendChild(o);
-      });
-    }
+    // preserva "Todos" do filtro
+    const firstIsAll = sel.querySelector('option[value=""]') !== null;
+    sel.innerHTML = firstIsAll ? '<option value="">Todos</option>' : "";
+    state.halls.forEach(h => {
+      const o = document.createElement("option");
+      o.value = h; o.textContent = h;
+      sel.appendChild(o);
+    });
   });
 }
 
@@ -82,6 +94,17 @@ function bindEvents() {
     toast("Saiu.");
   });
 
+  $("#btn-install")?.addEventListener("click", async () => {
+    // se o navegador permitir, mostra o pedido de instalação
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt = null;
+    } else {
+      $("#install-dialog").showModal(); // mostra instruções
+    }
+  });
+  $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
+
   $("#btn-new")?.addEventListener("click", () => openPartyDialog());
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
 
@@ -92,6 +115,10 @@ function bindEvents() {
   $("#btn-cancel")?.addEventListener("click", () => $("#party-dialog").close());
 
   $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
+
+  // DANOS (quebrados)
+  $("#btn-damage-cancel")?.addEventListener("click", () => $("#damage-dialog").close());
+  $("#btn-damage-save")?.addEventListener("click", (e) => { e.preventDefault(); saveDamageFromForm(); });
 
   // calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
@@ -113,7 +140,6 @@ function toggleAuthUI() {
 
 /* ========= Firestore ========= */
 async function loadParties() {
-  // busca tudo e ordena aqui (simples, sem precisar criar índice no Firebase)
   const snap = await getDocs(collection(db, "parties"));
   state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
@@ -170,18 +196,35 @@ function renderCalendar() {
 
   for (let i=0;i<42;i++){
     const d = new Date(start); d.setDate(start.getDate()+i);
+    const dateStr = fmtDate(d);
     const cell = document.createElement("div");
     cell.className = "cal-cell";
     if (d.getMonth() !== base.getMonth()) cell.classList.add("cal-out");
+
     const hit = document.createElement("button");
     hit.className = "cal-hit";
-    hit.textContent = d.getDate();
-    hit.title = fmtDate(d);
+    hit.title = dateStr;
+
+    // número do dia
+    const dayDiv = document.createElement("div");
+    dayDiv.textContent = d.getDate();
+    hit.appendChild(dayDiv);
+
+    // badge se houver festas nesse dia
+    const count = state.parties.filter(p => p.date === dateStr).length;
+    if (count > 0) {
+      const badge = document.createElement("span");
+      badge.className = "badge-small cal-badge";
+      badge.textContent = count; // quantidade de festas
+      hit.appendChild(badge);
+    }
+
     hit.addEventListener("click", () => {
-      $("#filters [name=date]").value = fmtDate(d);
+      $("#filters [name=date]").value = dateStr;
       renderTable();
     });
-    if (fmtDate(d) === fmtDate(new Date())) cell.classList.add("cal-today");
+
+    if (dateStr === fmtDate(new Date())) cell.classList.add("cal-today");
     cell.appendChild(hit);
     grid.appendChild(cell);
   }
@@ -210,6 +253,7 @@ function renderTable() {
 
   list.forEach(p => {
     const tr = document.createElement("tr");
+    const showDamageBtn = eventEnded(p); // só depois que acabar
     tr.innerHTML = `
       <td>${p.date}</td>
       <td>${p.start_time||""}</td>
@@ -221,6 +265,7 @@ function renderTable() {
       <td>
         <button class="btn tiny action-btn" data-act="view">Ver</button>
         <button class="btn tiny action-btn" data-act="edit">Editar</button>
+        ${showDamageBtn ? '<button class="btn tiny action-btn" data-act="damage">Danos</button>' : ''}
         <button class="btn tiny action-btn" data-act="guests">Convidados</button>
         <button class="btn tiny danger action-btn" data-act="del">Apagar</button>
       </td>
@@ -228,6 +273,7 @@ function renderTable() {
     tr.querySelector('[data-act="view"]').addEventListener("click", ()=> openView(p));
     tr.querySelector('[data-act="edit"]').addEventListener("click", ()=> openPartyDialog(p));
     tr.querySelector('[data-act="guests"]').addEventListener("click", ()=> openGuests(p));
+    if (showDamageBtn) tr.querySelector('[data-act="damage"]').addEventListener("click", ()=> openDamage(p));
     tr.querySelector('[data-act="del"]').addEventListener("click", async ()=> {
       if (!confirm("Apagar esta festa?")) return;
       await deleteParty(p.id);
@@ -237,13 +283,19 @@ function renderTable() {
   });
 }
 
+function eventEnded(p){
+  // Considera a festa encerrada se a data/hora final já passou
+  const end = new Date(`${p.date}T${p.end_time || "23:59"}`);
+  return new Date() > end;
+}
+
 function matSummary(p){
   const req = `${p.cups||0} copos, ${p.plates||0} pratos`;
   const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
   return `${req}${brk?` • quebrados: ${brk}`:""}`;
 }
 
-/* ========= Dialog Nova/Editar ========= */
+/* ========= Dialog Nova/Editar (sem quebrados) ========= */
 function openPartyDialog(existing=null){
   const dlg = $("#party-dialog");
   const form = $("#party-form");
@@ -265,11 +317,6 @@ function openPartyDialog(existing=null){
     form.knives.value = existing.knives||0;
     form.spoons.value = existing.spoons||0;
     form.plates.value = existing.plates||0;
-    form.broken_cups.value = existing.broken_cups||0;
-    form.broken_forks.value = existing.broken_forks||0;
-    form.broken_knives.value = existing.broken_knives||0;
-    form.broken_spoons.value = existing.broken_spoons||0;
-    form.broken_plates.value = existing.broken_plates||0;
     form.guests_text.value = (existing.guests||[]).join("; ");
   }
 
@@ -280,14 +327,9 @@ async function savePartyFromForm(){
   const form = $("#party-form");
   const data = Object.fromEntries(new FormData(form).entries());
 
-  // sem anexo
-
-  // normalizar
+  // normalizar (sem campos de quebrados aqui)
   data.cups = num(data.cups); data.forks=num(data.forks); data.knives=num(data.knives);
   data.spoons=num(data.spoons); data.plates=num(data.plates);
-  data.broken_cups = num(data.broken_cups); data.broken_forks=num(data.broken_forks);
-  data.broken_knives=num(data.broken_knives); data.broken_spoons=num(data.broken_spoons);
-  data.broken_plates=num(data.broken_plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
 
   const editingId = $("#party-form").dataset.editing;
@@ -304,11 +346,47 @@ async function savePartyFromForm(){
   }
 }
 
+/* ========= DANOS (quebrados, separado) ========= */
+let currentDamageId = null;
+
+function openDamage(p){
+  currentDamageId = p.id;
+  const form = $("#damage-form");
+  form.reset();
+  form.broken_cups.value   = num(p.broken_cups);
+  form.broken_forks.value  = num(p.broken_forks);
+  form.broken_knives.value = num(p.broken_knives);
+  form.broken_spoons.value = num(p.broken_spoons);
+  form.broken_plates.value = num(p.broken_plates);
+  $("#damage-dialog").showModal();
+}
+
+async function saveDamageFromForm(){
+  if (!currentDamageId) return;
+  const form = $("#damage-form");
+  const data = Object.fromEntries(new FormData(form).entries());
+  const patch = {
+    broken_cups:   num(data.broken_cups),
+    broken_forks:  num(data.broken_forks),
+    broken_knives: num(data.broken_knives),
+    broken_spoons: num(data.broken_spoons),
+    broken_plates: num(data.broken_plates)
+  };
+  try {
+    await updateParty(currentDamageId, patch);
+    $("#damage-dialog").close();
+    currentDamageId = null;
+    await loadParties(); renderAll(); toast("Danos salvos.");
+  } catch (e) {
+    err("Não foi possível salvar os danos.");
+  }
+}
+
 /* ========= Ver & Convidados ========= */
 function openView(p){
   const el = $("#view-content");
   const guests = (p.guests||[]).map(g=>`<span class="chip">${esc(g)}</span>`).join(" ");
-  const noAttachment = `<span class="muted tiny">Anexo desativado (sem arquivo).</span>`;
+  const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
   el.innerHTML = `
     <div class="party-card">
       <div class="party-head">
@@ -318,7 +396,7 @@ function openView(p){
       <div class="muted tiny">Início: ${p.start_time||"-"} • Término: ${p.end_time||"-"}</div>
       <div class="muted tiny">Materiais: ${matSummary(p)}</div>
       <div class="muted tiny">Convidados: ${guests||"<em>—</em>"}</div>
-      <div style="margin-top:8px">${noAttachment}</div>
+      <div class="muted tiny">Quebrados: ${brk || "—"}</div>
     </div>
   `;
   $("#view-dialog").showModal();
