@@ -1,24 +1,37 @@
-const CACHE = 'vivendas-v22';
+// sw.js — deixa instalável e funciona offline básico
+const CACHE = "festas-v1";
 const ASSETS = [
-  'index.html', 'style.css?v=22', 'app.js?v=22',
-  'favicon.svg', 'hero.svg', 'manifest.webmanifest'
+  "./",
+  "./index.html",
+  "./style.css",
+  "./app.js",
+  "./config.js",
+  "./manifest.webmanifest",
+  "./favicon.svg"
 ];
-self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  self.skipWaiting();
 });
-self.addEventListener('activate', e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
 });
-self.addEventListener('fetch', e=>{
-  const { request } = e;
-  if (request.method !== 'GET') return;
+
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  // Rede primeiro; se falhar, cache
   e.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).then(resp=>{
-      if (resp.ok && request.url.startsWith(location.origin)) {
-        const copy = resp.clone();
-        caches.open(CACHE).then(c=>c.put(request, copy));
-      }
-      return resp;
-    }).catch(()=> cached))
+    fetch(req).then(res => {
+      const copy = res.clone();
+      caches.open(CACHE).then(c => c.put(req, copy));
+      return res;
+    }).catch(() => caches.match(req).then(m => m || caches.match("./index.html")))
   );
 });
