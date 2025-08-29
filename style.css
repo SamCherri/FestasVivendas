@@ -3,13 +3,13 @@
   --bg:#0a1623; --panel:#0f2031; --card:#0f2235; --muted:#b8c9dc;
   --primary:#0B74B8; --secondary:#18C07A; --danger:#e74c3c; --white:#fff;
 
-  /* Tamanhos globais (AUMENTEI AS LETRAS) */
+  /* Tamanhos globais (maior e mais confortável) */
   --text: clamp(16px, 3.9vw, 18px);
   --text-lg: clamp(18px, 4.6vw, 20px);
   --text-xl: clamp(20px, 5.6vw, 24px);
 
-  /* Espaços (DIMINUI GAPS) */
-  --radius:14px; 
+  /* Espaços */
+  --radius:14px;
   --space:12px;
 }
 
@@ -21,10 +21,14 @@ html,body{
 img{max-width:100%;height:auto;display:block}
 .visually-hidden{position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
 
+/* Acessibilidade: foco visível */
+:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
 /* Topo */
 .topbar{
   background:linear-gradient(90deg,var(--primary),#15a16e);
-  color:var(--white); padding:8px 12px; position:sticky; top:0; z-index:5
+  color:var(--white); padding:8px 12px; position:sticky; top:0; z-index:5;
+  box-shadow:0 4px 18px rgba(0,0,0,.3)
 }
 .brand{display:flex;gap:8px;align-items:center;font-weight:700;font-size:var(--text-lg)}
 .actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}
@@ -33,18 +37,20 @@ img{max-width:100%;height:auto;display:block}
 /* Layout */
 .container{max-width:1100px;margin:12px auto;padding:0 10px}
 
-/* Botões (um pouco maiores) */
+/* Botões */
 .btn{
   appearance:none;border:1px solid #2b3a4a;background:#13283b;color:#e6f0ff;
-  border-radius:999px;padding:11px 14px;cursor:pointer;font-size:inherit
+  border-radius:999px;padding:11px 14px;cursor:pointer;font-size:inherit;transition:transform .06s ease,opacity .15s
 }
+.btn:hover{opacity:.9}
+.btn:active{transform:scale(.98)}
 .btn.primary{background:linear-gradient(90deg,var(--primary),#15a16e);border:0;color:#fff;font-weight:700}
 .btn.ghost{background:transparent;border-color:#3a5066}
 .btn.link{background:transparent;border:0;text-decoration:underline}
 .btn.danger{background:#e74c3c;border:0;color:#fff}
 .fab{position:fixed;right:16px;bottom:16px;background:#22c55e;width:56px;height:56px;border-radius:50%;border:0;color:#fff;font-size:26px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
 
-/* Cartões + densidade menor */
+/* Cartões */
 .card{
   background:var(--card); border:1px solid #203247; border-radius:var(--radius);
   padding:12px; box-shadow:0 8px 20px rgba(0,0,0,.25); margin-bottom:12px
@@ -63,42 +69,51 @@ input,select,textarea{
 .grid.five{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 @media (max-width:720px){.grid.two,.grid.five{grid-template-columns:1fr}}
 
-/* Métricas (mais juntas e com número maior) */
+/* Métricas */
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .metric{background:var(--card);border:1px solid #203247;border-radius:12px;padding:10px;text-align:center}
 .metric .k{color:var(--muted)}
 .metric .v{font-size:var(--text-xl);font-weight:800}
 
-/* Calendário (menos espaço e números maiores) */
+/* Calendário */
 .calendar .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .calendar .cal-title{font-weight:800}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.cal-dow{color:var(--muted);text-align:center}
 .cal-cell{aspect-ratio:1/1;border-radius:12px;background:#13263a;border:1px solid #223548}
-.cal-hit{all:unset;cursor:pointer;display:grid;place-items:center;width:100%;height:100%;font-size:1.05em}
 .cal-out{opacity:.36}
 .cal-today{outline:2px solid var(--secondary)}
-.badge-small{
-  display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;
+.cal-hit{
+  all:unset;cursor:pointer;display:grid;place-items:center;width:100%;height:100%;
+  font-size:1.05em; position:relative
+}
+/* “bolinha” com quantidade de festas no canto */
+.cal-badge{
+  position:absolute; right:6px; bottom:6px;
+  display:inline-block; padding:2px 6px; border-radius:999px;
   background:rgba(24,192,122,.18);border:1px solid rgba(24,192,122,.5);font-size:.82em
 }
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
-.dot-has{background:#1fb87a}
-.dot-today{background:#19aaff}
+/* fim de semana com leve tom */
+.cal-grid > :nth-child(7n),
+.cal-grid > :nth-child(7n-1){ background:#10283f }
 
-/* Cards/tabela */
+/* Lista/Tabela */
 .cards{display:grid;gap:8px}
 .party-card{background:var(--card);border:1px solid #203247;border-radius:12px;padding:10px}
 .party-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .badge{background:#0B74B8;color:#fff;border-radius:999px;padding:3px 7px}
+.badge.ok{background:#159f6d}
+.badge.warn{background:#d8893a}
 .chip{display:inline-block;background:#0e2133;border:1px solid #2a3a4c;border-radius:999px;padding:3px 7px;margin:4px 6px 0 0;color:#cfe3ff}
-.row-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px}
-@media (max-width:720px){.row-actions{grid-template-columns:repeat(2,1fr)}}
 
-/* Tabela mais compacta */
-.table-wrapper{overflow:auto}
+.table-wrapper{max-height:60vh;overflow:auto}
 .table{width:100%;border-collapse:collapse}
-.table th,.table td{border-bottom:1px solid #223548;padding:8px 6px;text-align:left;vertical-align:top}
+.table thead th{
+  position:sticky; top:0; background:#0f2235; z-index:1;
+  border-bottom:1px solid #223548; padding:8px 6px; text-align:left
+}
+.table td{border-bottom:1px solid #223548;padding:8px 6px;text-align:left;vertical-align:top}
+.table tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+.table tbody tr:hover{background:rgba(255,255,255,.04)}
 
 /* Mensagens */
 .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0e2133;border:1px solid #2a3a4c;padding:10px 14px;border-radius:999px}
