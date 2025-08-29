@@ -6,7 +6,6 @@
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="theme-color" content="#0B74B8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -24,6 +23,7 @@
     </div>
   </header>
 
+  <!-- Menu lateral -->
   <aside id="drawer" class="drawer" hidden>
     <div class="drawer-head">
       <strong>Menu</strong>
@@ -35,7 +35,6 @@
       <hr/>
       <button class="drawer-item" id="m-new">➕ Nova Festa</button>
       <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
-      <button class="drawer-item" id="m-install">📲 Instalar no celular</button>
       <button class="drawer-item" id="m-logout">🚪 Sair</button>
     </nav>
   </aside>
@@ -44,22 +43,17 @@
   <main class="container">
     <!-- LOGIN -->
     <section id="login-section" class="card center-v">
-      <div>
-        <h1>Acesso interno</h1>
-        <form id="login-form" class="form">
-          <label>E-mail
-            <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
-          </label>
-          <label>Senha
-            <input type="password" name="password" required minlength="6" placeholder="••••••••">
-          </label>
-          <button class="btn primary" id="btn-login">Entrar</button>
-        </form>
-        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button id="btn-install" type="button" class="btn ghost">📲 Instalar no celular</button>
-        </div>
-        <p class="muted tiny" style="margin-top:8px">Problemas? Contate a administração.</p>
-      </div>
+      <h1>Acesso interno</h1>
+      <form id="login-form" class="form">
+        <label>E-mail
+          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
+        </label>
+        <label>Senha
+          <input type="password" name="password" required minlength="6" placeholder="••••••••">
+        </label>
+        <button class="btn primary" id="btn-login">Entrar</button>
+      </form>
+      <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
 
     <!-- APP -->
@@ -108,10 +102,13 @@
       </section>
     </section>
 
-    <!-- DIÁLOGOS -->
     <dialog id="party-dialog"></dialog>
     <dialog id="finalize-dialog"></dialog>
-    <dialog id="view-dialog"><div id="view-content"></div><menu><button id="btn-close-view" class="btn">Fechar</button></menu></dialog>
+
+    <dialog id="view-dialog">
+      <div id="view-content"></div>
+      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
+    </dialog>
 
     <button id="fab-new" class="fab" hidden>＋</button>
     <div id="toast" class="toast" hidden></div>
