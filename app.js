@@ -1,7 +1,7 @@
 // app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
 
-// Firebase direto da web (sem instalar nada)
+// Firebase direto da web
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -22,26 +22,29 @@ const db   = getFirestore(app);
 let state = {
   user: null,
   monthBase: new Date(),
-  halls: ["Gourmet", "Menor"],   // <- apenas estes dois
-  parties: [] // vem do Firestore
+  halls: ["Gourmet", "Menor"],
+  parties: []
 };
 
-let deferredPrompt = null; // possível instalação do app (quando suportado)
+let deferredPrompt = null; // para instalar app
 
 document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
+  // PWA: registra o service worker (necessário para instalar como app)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  }
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
     toggleAuthUI();
     if (u) loadParties().then(()=>{ renderAll(); });
-  });
-
-  // captura tentativa de instalar (alguns celulares)
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
   });
 
   ensureHelpers();
@@ -64,7 +67,6 @@ function ensureHelpers() {
 function fillHallSelects() {
   const selects = $$('select[name="hall"]');
   selects.forEach(sel => {
-    // preserva "Todos" do filtro
     const firstIsAll = sel.querySelector('option[value=""]') !== null;
     sel.innerHTML = firstIsAll ? '<option value="">Todos</option>' : "";
     state.halls.forEach(h => {
@@ -90,25 +92,19 @@ function bindEvents() {
   });
 
   $("#btn-logout")?.addEventListener("click", async () => {
-    await signOut(auth);
-    toast("Saiu.");
+    await signOut(auth); toast("Saiu.");
   });
 
+  // Instalar app
   $("#btn-install")?.addEventListener("click", async () => {
-    // se o navegador permitir, mostra o pedido de instalação
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt = null;
-    } else {
-      $("#install-dialog").showModal(); // mostra instruções
-    }
+    if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+    else { $("#install-dialog").showModal(); }
   });
   $("#btn-install-close")?.addEventListener("click", () => $("#install-dialog").close());
 
   $("#btn-new")?.addEventListener("click", () => openPartyDialog());
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
 
-  $("#btn-report")?.addEventListener("click", () => openReport());
   $("#btn-notify")?.addEventListener("click", () => requestNotify());
 
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
@@ -116,9 +112,9 @@ function bindEvents() {
 
   $("#btn-save")?.addEventListener("click", (e) => { e.preventDefault(); savePartyFromForm(); });
 
-  // DANOS (quebrados)
-  $("#btn-damage-cancel")?.addEventListener("click", () => $("#damage-dialog").close());
-  $("#btn-damage-save")?.addEventListener("click", (e) => { e.preventDefault(); saveDamageFromForm(); });
+  // FINALIZAR
+  $("#btn-finalize-cancel")?.addEventListener("click", () => $("#finalize-dialog").close());
+  $("#btn-finalize-save")?.addEventListener("click", (e) => { e.preventDefault(); saveFinalizeFromForm(); });
 
   // calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
@@ -148,14 +144,8 @@ async function createParty(data) {
   const ref = await addDoc(collection(db, "parties"), data);
   return ref.id;
 }
-
-async function updateParty(id, data) {
-  await updateDoc(doc(db, "parties", id), data);
-}
-
-async function deleteParty(id) {
-  await deleteDoc(doc(db, "parties", id));
-}
+async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), data); }
+async function deleteParty(id) { await deleteDoc(doc(db, "parties", id)); }
 
 /* ========= Calendário & KPIs ========= */
 function shiftMonth(n) {
@@ -205,17 +195,15 @@ function renderCalendar() {
     hit.className = "cal-hit";
     hit.title = dateStr;
 
-    // número do dia
     const dayDiv = document.createElement("div");
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    // badge se houver festas nesse dia
     const count = state.parties.filter(p => p.date === dateStr).length;
     if (count > 0) {
       const badge = document.createElement("span");
       badge.className = "badge-small cal-badge";
-      badge.textContent = count; // quantidade de festas
+      badge.textContent = count;
       hit.appendChild(badge);
     }
 
@@ -253,7 +241,12 @@ function renderTable() {
 
   list.forEach(p => {
     const tr = document.createElement("tr");
-    const showDamageBtn = eventEnded(p); // só depois que acabar
+    const showFinalize = eventEnded(p); // só depois que terminar
+
+    const statusBadge = p.status
+      ? `<span class="badge">${p.status === "ok" ? "OK" : "Ocorrência"}</span>`
+      : "";
+
     tr.innerHTML = `
       <td>${p.date}</td>
       <td>${p.start_time||""}</td>
@@ -263,9 +256,11 @@ function renderTable() {
       <td>${p.resident_name||""}</td>
       <td>${matSummary(p)}</td>
       <td>
+        ${statusBadge}
         <button class="btn tiny action-btn" data-act="view">Ver</button>
         <button class="btn tiny action-btn" data-act="edit">Editar</button>
-        ${showDamageBtn ? '<button class="btn tiny action-btn" data-act="damage">Danos</button>' : ''}
+        ${showFinalize ? '<button class="btn tiny action-btn" data-act="finalize">Finalizar</button>' : ''}
+        ${p.status ? '<button class="btn tiny action-btn" data-act="refinalize">Editar finalização</button>' : ''}
         <button class="btn tiny action-btn" data-act="guests">Convidados</button>
         <button class="btn tiny danger action-btn" data-act="del">Apagar</button>
       </td>
@@ -273,7 +268,8 @@ function renderTable() {
     tr.querySelector('[data-act="view"]').addEventListener("click", ()=> openView(p));
     tr.querySelector('[data-act="edit"]').addEventListener("click", ()=> openPartyDialog(p));
     tr.querySelector('[data-act="guests"]').addEventListener("click", ()=> openGuests(p));
-    if (showDamageBtn) tr.querySelector('[data-act="damage"]').addEventListener("click", ()=> openDamage(p));
+    if (showFinalize) tr.querySelector('[data-act="finalize"]')?.addEventListener("click", ()=> openFinalize(p));
+    if (p.status) tr.querySelector('[data-act="refinalize"]')?.addEventListener("click", ()=> openFinalize(p));
     tr.querySelector('[data-act="del"]').addEventListener("click", async ()=> {
       if (!confirm("Apagar esta festa?")) return;
       await deleteParty(p.id);
@@ -284,7 +280,6 @@ function renderTable() {
 }
 
 function eventEnded(p){
-  // Considera a festa encerrada se a data/hora final já passou
   const end = new Date(`${p.date}T${p.end_time || "23:59"}`);
   return new Date() > end;
 }
@@ -295,7 +290,7 @@ function matSummary(p){
   return `${req}${brk?` • quebrados: ${brk}`:""}`;
 }
 
-/* ========= Dialog Nova/Editar (sem quebrados) ========= */
+/* ========= Nova/Editar ========= */
 function openPartyDialog(existing=null){
   const dlg = $("#party-dialog");
   const form = $("#party-form");
@@ -327,65 +322,65 @@ async function savePartyFromForm(){
   const form = $("#party-form");
   const data = Object.fromEntries(new FormData(form).entries());
 
-  // normalizar (sem campos de quebrados aqui)
+  // normalizar
   data.cups = num(data.cups); data.forks=num(data.forks); data.knives=num(data.knives);
   data.spoons=num(data.spoons); data.plates=num(data.plates);
   data.guests = (data.guests_text||"").split(";").map(s=>s.trim()).filter(Boolean);
 
   const editingId = $("#party-form").dataset.editing;
   try {
-    if (editingId){
-      await updateParty(editingId, data);
-    } else {
-      await createParty({ ...data, created_at: Date.now() });
-    }
+    if (editingId){ await updateParty(editingId, data); }
+    else { await createParty({ ...data, created_at: Date.now() }); }
     $("#party-dialog").close();
     await loadParties(); renderAll(); toast("Salvo.");
-  } catch (e) {
-    err("Não foi possível salvar.");
-  }
+  } catch (e) { err("Não foi possível salvar."); }
 }
 
-/* ========= DANOS (quebrados, separado) ========= */
-let currentDamageId = null;
+/* ========= Finalizar ========= */
+let currentFinalizeId = null;
 
-function openDamage(p){
-  currentDamageId = p.id;
-  const form = $("#damage-form");
-  form.reset();
-  form.broken_cups.value   = num(p.broken_cups);
-  form.broken_forks.value  = num(p.broken_forks);
-  form.broken_knives.value = num(p.broken_knives);
-  form.broken_spoons.value = num(p.broken_spoons);
-  form.broken_plates.value = num(p.broken_plates);
-  $("#damage-dialog").showModal();
+function openFinalize(p){
+  currentFinalizeId = p.id;
+  const f = $("#finalize-form");
+  f.reset();
+  if (p.status === "occurrence") f.querySelector('[value="occurrence"]').checked = true;
+  if (p.occurrence_notes) f.occurrence_notes.value = p.occurrence_notes;
+  f.broken_cups.value   = num(p.broken_cups);
+  f.broken_forks.value  = num(p.broken_forks);
+  f.broken_knives.value = num(p.broken_knives);
+  f.broken_spoons.value = num(p.broken_spoons);
+  f.broken_plates.value = num(p.broken_plates);
+  $("#finalize-dialog").showModal();
 }
 
-async function saveDamageFromForm(){
-  if (!currentDamageId) return;
-  const form = $("#damage-form");
-  const data = Object.fromEntries(new FormData(form).entries());
+async function saveFinalizeFromForm(){
+  if (!currentFinalizeId) return;
+  const f = $("#finalize-form");
+  const data = Object.fromEntries(new FormData(f).entries());
   const patch = {
+    status: data.status, // "ok" ou "occurrence"
+    occurrence_notes: data.occurrence_notes || "",
     broken_cups:   num(data.broken_cups),
     broken_forks:  num(data.broken_forks),
     broken_knives: num(data.broken_knives),
     broken_spoons: num(data.broken_spoons),
-    broken_plates: num(data.broken_plates)
+    broken_plates: num(data.broken_plates),
+    finalized_at: Date.now()
   };
   try {
-    await updateParty(currentDamageId, patch);
-    $("#damage-dialog").close();
-    currentDamageId = null;
-    await loadParties(); renderAll(); toast("Danos salvos.");
-  } catch (e) {
-    err("Não foi possível salvar os danos.");
-  }
+    await updateParty(currentFinalizeId, patch);
+    $("#finalize-dialog").close();
+    currentFinalizeId = null;
+    await loadParties(); renderAll(); toast("Festa finalizada.");
+  } catch (e) { err("Não foi possível salvar a finalização."); }
 }
 
 /* ========= Ver & Convidados ========= */
 function openView(p){
   const el = $("#view-content");
   const guests = (p.guests||[]).map(g=>`<span class="chip">${esc(g)}</span>`).join(" ");
+  const status = p.status ? (p.status === "ok" ? "Terminou bem" : "Teve ocorrência") : "—";
+  const notes = p.occurrence_notes ? esc(p.occurrence_notes) : "—";
   const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
   el.innerHTML = `
     <div class="party-card">
@@ -396,6 +391,8 @@ function openView(p){
       <div class="muted tiny">Início: ${p.start_time||"-"} • Término: ${p.end_time||"-"}</div>
       <div class="muted tiny">Materiais: ${matSummary(p)}</div>
       <div class="muted tiny">Convidados: ${guests||"<em>—</em>"}</div>
+      <div class="muted tiny">Status: ${status}</div>
+      <div class="muted tiny">Notas: ${notes}</div>
       <div class="muted tiny">Quebrados: ${brk || "—"}</div>
     </div>
   `;
@@ -406,67 +403,18 @@ async function openGuests(p){
   const list = prompt("Edite os convidados (separe por ponto e vírgula ';'):", (p.guests||[]).join("; "));
   if (list===null) return;
   const guests = list.split(";").map(s=>s.trim()).filter(Boolean);
-  try {
-    await updateParty(p.id, { guests });
-    await loadParties(); renderAll(); toast("Convidados atualizados.");
-  } catch (e) {
-    err("Não foi possível atualizar convidados.");
-  }
-}
-
-/* ========= Relatório ========= */
-function openReport(){
-  const tot = {cups:0,forks:0,knives:0,spoons:0,plates:0};
-  const brk = {cups:0,forks:0,knives:0,spoons:0,plates:0};
-  state.parties.forEach(p=>{
-    tot.cups+=num(p.cups); tot.forks+=num(p.forks); tot.knives+=num(p.knives); tot.spoons+=num(p.spoons); tot.plates+=num(p.plates);
-    brk.cups+=num(p.broken_cups); brk.forks+=num(p.broken_forks); brk.knives+=num(p.broken_knives); brk.spoons+=num(p.broken_spoons); brk.plates+=num(p.broken_plates);
-  });
-
-  const html = `
-    <div class="card">
-      <h3>Relatório de Materiais</h3>
-      <div class="grid two">
-        <div>
-          <strong>Solicitados:</strong>
-          <ul class="tiny">
-            <li>Copos: ${tot.cups}</li>
-            <li>Pratos: ${tot.plates}</li>
-            <li>Garfos: ${tot.forks}</li>
-            <li>Facas: ${tot.knives}</li>
-            <li>Colheres: ${tot.spoons}</li>
-          </ul>
-        </div>
-        <div>
-          <strong>Quebrados:</strong>
-          <ul class="tiny">
-            <li>Copos: ${brk.cups}</li>
-            <li>Pratos: ${brk.plates}</li>
-            <li>Garfos: ${brk.forks}</li>
-            <li>Facas: ${brk.knives}</li>
-            <li>Colheres: ${brk.spoons}</li>
-          </ul>
-        </div>
-      </div>
-    </div>`;
-  $("#view-content").innerHTML = html;
-  $("#view-dialog").showModal();
+  try { await updateParty(p.id, { guests }); await loadParties(); renderAll(); toast("Convidados atualizados."); }
+  catch { err("Não foi possível atualizar convidados."); }
 }
 
 /* ========= Lembretes (navegador) ========= */
 function requestNotify(){
   if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
   Notification.requestPermission().then((perm)=>{
-    if (perm==="granted") toast("Lembretes ativados.");
-    else err("Permissão negada.");
+    if (perm==="granted") toast("Lembretes ativados."); else err("Permissão negada.");
   });
 }
-
-function startReminderLoop(){
-  setInterval(checkReminders, 60*1000);
-  checkReminders();
-}
-
+function startReminderLoop(){ setInterval(checkReminders, 60*1000); checkReminders(); }
 function checkReminders(){
   if (!("Notification" in window) || Notification.permission!=="granted") return;
   const today = new Date();
@@ -478,7 +426,6 @@ function checkReminders(){
     if (diffDays===1) maybeNotify(p,"Festa amanhã");
   });
 }
-
 const notifiedOnce = new Set();
 function maybeNotify(p, title){
   const key = title+"_"+p.id;
