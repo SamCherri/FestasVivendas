@@ -2,10 +2,11 @@
   "name": "Vivendas de La Salle — Festas",
   "short_name": "Festas",
   "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#0b1324",
+  "background_color": "#0b1420",
   "theme_color": "#0B74B8",
   "icons": [
-    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
