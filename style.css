@@ -13,7 +13,7 @@ html,body{
   margin:0; padding:0;
   background:linear-gradient(180deg,#0b1420,#0a1623);
   color:#e6f0ff; font:400 var(--text)/1.55 system-ui,-apple-system,Segoe UI,Roboto;
-  overflow-x:hidden;
+  overflow-x:hidden; /* evita barra horizontal */
 }
 img{max-width:100%;height:auto;display:block}
 .visually-hidden{position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
@@ -30,9 +30,13 @@ img{max-width:100%;height:auto;display:block}
 .brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:var(--text-lg)}
 .container{width:100%;max-width:1100px;margin:14px auto;padding:0 clamp(10px,4vw,20px)}
 
-/* Drawer */
-.drawer{position:fixed;inset:0 auto 0 0;width:min(86vw, 340px);background:rgba(16,39,60,.96);backdrop-filter:blur(6px);
-  border-right:1px solid #1e3145;transform:translateX(-100%);transition:transform .18s ease;z-index:9;padding:18px}
+/* Drawer (menu lateral) */
+.drawer{
+  position:fixed; inset:0 auto 0 0; width:min(86vw, 340px);
+  background:rgba(16,39,60,.96); backdrop-filter:blur(6px);
+  border-right:1px solid #1e3145; transform:translateX(-100%);
+  transition:transform .18s ease; z-index:9; padding:18px
+}
 .drawer.open{transform:none}
 .drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .drawer-nav{display:grid;gap:10px}
@@ -41,16 +45,24 @@ img{max-width:100%;height:auto;display:block}
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8}
 
 /* Botões */
-.btn{appearance:none;border:1px solid #2b3a4a;background:#13283b;color:#e6f0ff;border-radius:999px;padding:14px 18px;cursor:pointer;font-size:inherit;transition:transform .06s ease,opacity .15s,box-shadow .15s;max-width:100%}
+.btn{
+  appearance:none; border:1px solid #2b3a4a; background:#13283b; color:#e6f0ff;
+  border-radius:999px; padding:14px 18px; cursor:pointer; font-size:inherit;
+  transition:transform .06s ease,opacity .15s,box-shadow .15s; max-width:100%
+}
 .btn:hover{opacity:.92; box-shadow:0 8px 20px rgba(0,0,0,.25)}
 .btn:active{transform:scale(.98)}
 .btn.primary{background:linear-gradient(90deg,var(--primary),#15a16e);border:0;color:#fff;font-weight:800}
 .btn.ghost{background:transparent;border-color:#3a5066}
 .btn.link{background:transparent;border:0;text-decoration:underline}
 .btn.danger{background:#e74c3c;border:0;color:#fff}
-.fab{position:fixed;right:18px;bottom:18px;background:#22c55e;width:64px;height:64px;border-radius:50%;border:0;color:#fff;font-size:30px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.fab{
+  position:fixed; right:18px; bottom:18px; background:#22c55e;
+  width:64px; height:64px; border-radius:50%; border:0; color:#fff;
+  font-size:30px; box-shadow:0 12px 30px rgba(0,0,0,.35)
+}
 
-/* Cartões */
+/* Cartões / textos */
 .card{background:rgba(15,34,53,.96); border:1px solid #203247; border-radius:var(--radius); padding:16px; box-shadow:0 10px 26px rgba(0,0,0,.30); margin-bottom:16px}
 .center{text-align:center}
 .muted{color:var(--muted)}
@@ -107,7 +119,7 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
 .errbox{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#3b1215;color:#ffdede;border:1px solid #7d2b31;padding:12px 16px;border-radius:12px;z-index:9;font-size:1rem}
 .footer{opacity:.7;text-align:center;margin:16px 0;font-size:.95rem}
 
-/* ====== MOBILE LETRA MAIOR ====== */
+/* ====== MOBILE LETRA MAIOR (aparelhos comuns <=480px) ====== */
 @media (max-width: 480px){
   :root{
     --text: 20px;
@@ -123,48 +135,51 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
   .btn{ padding: 16px 20px; font-size:1.1rem }
   .drawer{ width: 94vw }
 }
-@media (max-width: 360px){
-  :root{
-    --text: 21px;
-    --text-lg: 23px;
-    --text-xl: 30px;
-  }
-  .cal-hit{ font-size: 1.6rem }
-  .cal-dot{ width: 14px; height: 14px }
-}
-/* ====== CELULARES GRANDES (ex.: Moto G 200) ======
-   Mais espaço = células do calendário e fontes maiores  */
+
+/* ====== CELULARES GRANDES (ex.: Moto G 200) ====== */
 @media (min-width: 480px) and (max-width: 900px) and (min-height: 780px){
-  /* base maior */
   :root{
     --text: 21px;
     --text-lg: 23px;
     --text-xl: 30px;
   }
-
-  /* container usa quase a tela toda */
   .container{ max-width: 1000px; padding: 0 14px }
-
-  /* métricas mais destacadas */
   .metrics{ gap: 14px }
   .metric{ padding: 16px }
   .metric .v{ font-size: clamp(30px, 9vw, 36px) }
-
-  /* calendário ocupa mais espaço visual */
   .calendar .cal-header{ margin-bottom: 12px }
-  .cal-grid{ gap: 12px }                  /* mais espaçamento entre dias */
-  .cal-cell{ border-radius: 18px }        /* cantos um pouco maiores */
-  .cal-hit{ font-size: 1.7rem }           /* número do dia maior (~27px) */
-  .cal-dot{ width: 14px; height: 14px }   /* bolinha maior */
-
-  /* botões mais confortáveis */
+  .cal-grid{ gap: 12px }
+  .cal-cell{ border-radius: 18px }
+  .cal-hit{ font-size: 1.7rem }
+  .cal-dot{ width: 14px; height: 14px }
   .btn{ padding: 16px 22px; font-size: 1.1rem }
   .fab{ width: 68px; height: 68px; font-size: 32px }
 }
 
-/* ====== MUITO ALTA (phablet/paisagem) — empurra ainda mais o calendário */
+/* ====== MUITO ALTA (phablet/paisagem) ====== */
 @media (min-width: 600px) and (max-width: 900px) and (min-height: 900px){
   .cal-grid{ gap: 14px }
-  .cal-hit{ font-size: 1.9rem }          /* ~30px */
+  .cal-hit{ font-size: 1.9rem }
   .cal-dot{ width: 15px; height: 15px }
+}
+
+/* ====== MODO RETRATO COM LETRA GIGANTE (~3×) ====== */
+@media screen and (max-width: 900px) and (orientation: portrait) {
+  :root{
+    --text: 26px;      /* corpo */
+    --text-lg: 30px;   /* subtítulos */
+    --text-xl: 36px;   /* títulos/números */
+  }
+  .cal-grid{ gap: 14px }
+  .cal-cell{ border-radius: 20px }
+  .cal-hit{ font-size: 2.2rem; font-weight: 800 }  /* ~35px */
+  .cal-dot{ width: 18px; height: 18px }
+  .metric{ padding: 20px }
+  .metric .k{ font-size: 1.4rem }
+  .metric .v{ font-size: 2.4rem }
+  .btn{ padding: 20px 26px; font-size: 1.3rem; font-weight: 700 }
+  .fab{ width: 80px; height: 80px; font-size: 38px }
+  .drawer-item{ font-size: 1.4rem; padding: 16px }
+  .table{ font-size: 1.3rem }
+  .table td::before{ min-width: 140px }
 }
