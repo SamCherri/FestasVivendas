@@ -36,7 +36,6 @@
       <hr/>
       <button class="drawer-item" id="m-new">➕ Nova Festa</button>
       <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
-      <button class="drawer-item" id="m-install" hidden>📲 Instalar app</button>
       <button class="drawer-item" id="m-logout">🚪 Sair</button>
     </nav>
   </aside>
@@ -55,10 +54,6 @@
         </label>
         <button class="btn primary" id="btn-login">Entrar</button>
       </form>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-        <button id="btn-install" class="btn ghost" hidden>📲 Instalar app</button>
-        <button id="btn-notify-login" class="btn ghost">🔔 Ativar lembretes</button>
-      </div>
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
 
@@ -108,9 +103,10 @@
       </section>
     </section>
 
-    <!-- DIALOGS -->
+    <!-- Diálogos montados pelo JS -->
     <dialog id="party-dialog"></dialog>
     <dialog id="finalize-dialog"></dialog>
+
     <dialog id="view-dialog">
       <div id="view-content"></div>
       <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
