@@ -1,4 +1,4 @@
-const CACHE = "festas-v3";
+const CACHE = "festas-v1";
 const ASSETS = ["./","./index.html","./style.css","./app.js","./config.js","./manifest.webmanifest","./favicon.svg"];
 
 self.addEventListener("install",(e)=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting();});
