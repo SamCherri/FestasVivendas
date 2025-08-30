@@ -5,18 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
-  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0B74B8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- CSS refatorado -->
+  <link rel="stylesheet" href="style.css?v=7" />
+  <!-- Garante que elementos com [hidden] sumam mesmo sem JS -->
   <style>[hidden]{display:none!important}</style>
-  <script type="module" src="config.js"></script>
-  <script type="module" src="app.js"></script>
+
+  <!-- App refatorado -->
+  <script type="module" src="config.js?v=7"></script>
+  <script type="module" src="app.js?v=7"></script>
 </head>
 <body>
+  <!-- Topo -->
   <header class="topbar">
-    <button id="btn-menu" class="btn ghost icon" aria-label="Menu" type="button">☰</button>
+    <button id="btn-menu" class="btn ghost icon" aria-label="Abrir menu" type="button">☰</button>
     <div class="brand">
       <img src="favicon.svg" alt="" width="24" height="24" />
       <span>Vivendas de La Salle — Festas</span>
@@ -55,6 +61,10 @@
         <button class="btn primary" id="btn-login" type="submit">Entrar</button>
         <button class="btn ghost" id="btn-install-login" type="button" style="margin-top:10px">Instalar app</button>
       </form>
+
+      <!-- Erros de login aparecem aqui (HTML) -->
+      <div id="login-error-box" class="alert" hidden role="alert" aria-live="polite"></div>
+
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
 
@@ -81,7 +91,7 @@
         </section>
       </section>
 
-      <!-- LISTA -->
+      <!-- LISTA DE FESTAS -->
       <section id="sec-list" hidden>
         <form id="filters" class="filters card">
           <label>Data <input type="date" name="date"></label>
@@ -104,6 +114,7 @@
       </section>
     </section>
 
+    <!-- Diálogos -->
     <dialog id="party-dialog"></dialog>
     <dialog id="finalize-dialog"></dialog>
 
@@ -112,7 +123,10 @@
       <menu><button id="btn-close-view" class="btn" type="button">Fechar</button></menu>
     </dialog>
 
+    <!-- Botão flutuante -->
     <button id="fab-new" class="fab" hidden type="button">＋</button>
+
+    <!-- Mensagens -->
     <div id="toast" class="toast" hidden></div>
     <div id="errbox" class="errbox" hidden></div>
   </main>
