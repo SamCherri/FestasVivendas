@@ -1,7 +1,7 @@
 // app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
 
-// Firebase via CDN
+// Firebase (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -29,16 +29,7 @@ document.title = APP_NAME;
 /* ========= Init ========= */
 function init() {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
-
-  // Captura o evento de instalação PWA
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    updateInstallButtons(true);
-  });
-  window.addEventListener("appinstalled", () => {
-    deferredPrompt = null; updateInstallButtons(false); toast("App instalado.");
-  });
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
 
   onAuthStateChanged(auth, (u) => {
     state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -79,10 +70,7 @@ function bindEvents() {
     catch { err("Falha no login. Confira e-mail e senha."); }
   });
 
-  // Notificações na tela de login
-  $("#btn-notify-login")?.addEventListener("click", requestNotify);
-
-  // Menu lateral
+  // Menu
   $("#btn-menu")?.addEventListener("click", openDrawer);
   $("#btn-close-drawer")?.addEventListener("click", closeDrawer);
   $("#backdrop")?.addEventListener("click", closeDrawer);
@@ -92,11 +80,7 @@ function bindEvents() {
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
 
-  // Instalar app (login + menu)
-  $("#btn-install")?.addEventListener("click", () => { installApp(); });
-  $("#m-install")?.addEventListener("click", () => { closeDrawer(); installApp(); });
-
-  // FAB e dialogs
+  // Ações
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
 
@@ -107,19 +91,6 @@ function bindEvents() {
   // Filtros (lista)
   $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
   $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
-}
-
-function updateInstallButtons(avail){
-  $("#btn-install")?.toggleAttribute("hidden", !avail);
-  $("#m-install")?.toggleAttribute("hidden", !avail);
-}
-async function installApp(){
-  if (!deferredPrompt) { err("Instalação não disponível (talvez já instalado)."); return; }
-  deferredPrompt.prompt();
-  const choice = await deferredPrompt.userChoice;
-  if (choice.outcome === "accepted") toast("Instalando…");
-  deferredPrompt = null;
-  updateInstallButtons(false);
 }
 
 function showView(view){
@@ -217,7 +188,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela (cards no mobile) ========= */
+/* ========= Tabela (vira “cards” no celular) ========= */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -255,16 +226,17 @@ function renderTable(){
         ${statusBadge}
         <button class="btn tiny action-btn" data-act="view">Ver</button>
         <button class="btn tiny action-btn" data-act="edit">Editar</button>
-        ${showFinalize?'<button class="btn tiny action-btn" data-act="finalize">Finalizar</button>':''}
+        ${showFinalize?'<button class="btn tiny action-btn" data-act="finalizar">Finalizar</button>':''}
         ${p.status?'<button class="btn tiny action-btn" data-act="refinalize">Editar finalização</button>':''}
         <button class="btn tiny action-btn" data-act="guests">Convidados</button>
         <button class="btn tiny danger action-btn" data-act="del">Apagar</button>
       </td>
     `;
+
     tr.querySelector('[data-act="view"]').addEventListener("click", ()=> openView(p));
     tr.querySelector('[data-act="edit"]').addEventListener("click", ()=> openPartyDialog(p));
     tr.querySelector('[data-act="guests"]').addEventListener("click", ()=> openGuests(p));
-    if (showFinalize) tr.querySelector('[data-act="finalize"]')?.addEventListener("click", ()=> openFinalize(p));
+    if (showFinalize) tr.querySelector('[data-act="finalizar"]')?.addEventListener("click", ()=> openFinalize(p));
     if (p.status) tr.querySelector('[data-act="refinalize"]')?.addEventListener("click", ()=> openFinalize(p));
     tr.querySelector('[data-act="del"]').addEventListener("click", async ()=>{
       if (!confirm("Apagar esta festa?")) return;
@@ -477,3 +449,15 @@ function maybeNotify(p, title){
   const key = title+"_"+p.id;
   if (notifiedOnce.has(key)) return;
   notifiedOnce.add(key);
+  new Notification(title, { body: `${p.date} • ${p.hall} • ${p.apartment} - ${p.resident_name}` });
+}
+
+/* ========= Util ========= */
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; setTimeout(()=>t.hidden=true,2000); }
+function err(msg){ const e=$("#errbox"); e.textContent=msg; e.hidden=false; setTimeout(()=>e.hidden=true,2500); }
+function esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+function num(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
+
+init();
