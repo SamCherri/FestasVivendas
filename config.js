@@ -1,9 +1,11 @@
-export const APP_NAME = "Vivendas de La Salle — Festas";
-export const firebaseConfig = {
-  apiKey: "AIzaSyDsMEbeVz-niQVM3GydnycJ0HcvLWNikw4",
-  authDomain: "festavivendas.firebaseapp.com",
-  projectId: "festavivendas",
-  storageBucket: "festavivendas.appspot.com",
-  messagingSenderId: "722983983574",
-  appId: "1:722983983574:web:cb8e7da44fb43a87e4ac77"
-};
+{
+  "name": "Vivendas de La Salle — Festas",
+  "short_name": "Festas",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1420",
+  "theme_color": "#0B74B8",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
