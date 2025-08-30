@@ -1,185 +1,122 @@
-:root{
-  --bg:#0b1420; --panel:#0f2031; --card:#0f2235; --muted:#b8c9dc;
-  --primary:#0B74B8; --secondary:#18C07A; --danger:#e74c3c; --white:#fff;
-  --text: clamp(16px, 3.9vw, 18px);
-  --text-lg: clamp(18px, 4.6vw, 20px);
-  --text-xl: clamp(20px, 5.6vw, 24px);
-  --radius:16px; --space:12px;
-}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vivendas de La Salle — Festas</title>
+  <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#0B74B8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+  <style>[hidden]{display:none!important}</style>
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <!-- Topo -->
+  <header class="topbar">
+    <button id="btn-menu" class="btn ghost icon" aria-label="Menu">☰</button>
+    <div class="brand">
+      <img src="favicon.svg" alt="" width="24" height="24" />
+      <span>Vivendas de La Salle — Festas</span>
+    </div>
+  </header>
 
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-html,body{
-  margin:0; padding:0;
-  background:linear-gradient(180deg,#0b1420,#0a1623);
-  color:#e6f0ff; font:400 var(--text)/1.55 system-ui,-apple-system,Segoe UI,Roboto;
-  overflow-x:hidden; /* evita barra horizontal */
-}
-img{max-width:100%;height:auto;display:block}
-.visually-hidden{position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
-:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+  <!-- Menu lateral -->
+  <aside id="drawer" class="drawer" hidden>
+    <div class="drawer-head">
+      <strong>Menu</strong>
+      <button id="btn-close-drawer" class="btn link">Fechar</button>
+    </div>
+    <nav class="drawer-nav">
+      <button class="drawer-item" data-go="calendar">📅 Calendário</button>
+      <button class="drawer-item" data-go="list">📋 Festas</button>
+      <hr/>
+      <button class="drawer-item" id="m-new">➕ Nova Festa</button>
+      <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
+      <button class="drawer-item" id="m-logout">🚪 Sair</button>
+    </nav>
+  </aside>
+  <div id="backdrop" class="backdrop" hidden></div>
 
-/* Topbar */
-.topbar{
-  background:linear-gradient(90deg,#0b75b8,#15a16e);
-  color:var(--white); padding:12px; position:sticky; top:0; z-index:8;
-  display:flex; align-items:center; gap:10px; box-shadow:0 8px 26px rgba(0,0,0,.35)
-}
-.icon{padding:10px 12px;border-radius:999px}
-.icon:hover{background:rgba(255,255,255,.08)}
-.brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:var(--text-lg)}
-.container{width:100%;max-width:1100px;margin:14px auto;padding:0 clamp(10px,4vw,20px)}
+  <main class="container">
+    <!-- LOGIN -->
+    <section id="login-section" class="card center-v">
+      <h1>Acesso interno</h1>
+      <form id="login-form" class="form">
+        <label>E-mail
+          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
+        </label>
+        <label>Senha
+          <input type="password" name="password" required minlength="6" placeholder="••••••••">
+        </label>
+        <button class="btn primary" id="btn-login">Entrar</button>
+      </form>
+      <p class="muted tiny">Problemas? Contate a administração.</p>
+    </section>
 
-/* Drawer (menu lateral) */
-.drawer{
-  position:fixed; inset:0 auto 0 0; width:min(86vw, 340px);
-  background:rgba(16,39,60,.96); backdrop-filter:blur(6px);
-  border-right:1px solid #1e3145; transform:translateX(-100%);
-  transition:transform .18s ease; z-index:9; padding:18px
-}
-.drawer.open{transform:none}
-.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.drawer-nav{display:grid;gap:10px}
-.drawer-item{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;border-radius:14px;padding:14px;text-align:left;font-size:1.1rem}
-.drawer-item:hover{background:#123149}
-.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8}
+    <!-- APP -->
+    <section id="app-section" hidden>
+      <!-- CALENDÁRIO -->
+      <section id="sec-calendar">
+        <section class="metrics">
+          <div class="metric"><div class="k">Hoje</div><div class="v" id="kpi-today">0</div></div>
+          <div class="metric"><div class="k">Próx. 4 semanas</div><div class="v" id="kpi-upcoming">0</div></div>
+          <div class="metric"><div class="k">Convidados</div><div class="v" id="kpi-guests">0</div></div>
+        </section>
 
-/* Botões */
-.btn{
-  appearance:none; border:1px solid #2b3a4a; background:#13283b; color:#e6f0ff;
-  border-radius:999px; padding:14px 18px; cursor:pointer; font-size:inherit;
-  transition:transform .06s ease,opacity .15s,box-shadow .15s; max-width:100%
-}
-.btn:hover{opacity:.92; box-shadow:0 8px 20px rgba(0,0,0,.25)}
-.btn:active{transform:scale(.98)}
-.btn.primary{background:linear-gradient(90deg,var(--primary),#15a16e);border:0;color:#fff;font-weight:800}
-.btn.ghost{background:transparent;border-color:#3a5066}
-.btn.link{background:transparent;border:0;text-decoration:underline}
-.btn.danger{background:#e74c3c;border:0;color:#fff}
-.fab{
-  position:fixed; right:18px; bottom:18px; background:#22c55e;
-  width:64px; height:64px; border-radius:50%; border:0; color:#fff;
-  font-size:30px; box-shadow:0 12px 30px rgba(0,0,0,.35)
-}
+        <section class="card calendar">
+          <header class="cal-header">
+            <button id="cal-prev" class="btn">◀</button>
+            <div id="cal-title" class="cal-title">Mês Ano</div>
+            <button id="cal-next" class="btn">▶</button>
+          </header>
+          <div id="cal-grid" class="cal-grid"></div>
+          <p class="tiny muted" style="margin-top:8px">
+            A <strong>bolinha verde</strong> marca que há festa nesse dia.
+          </p>
+        </section>
+      </section>
 
-/* Cartões / textos */
-.card{background:rgba(15,34,53,.96); border:1px solid #203247; border-radius:var(--radius); padding:16px; box-shadow:0 10px 26px rgba(0,0,0,.30); margin-bottom:16px}
-.center{text-align:center}
-.muted{color:var(--muted)}
-.tiny{font-size:.95em}
+      <!-- LISTA DE FESTAS -->
+      <section id="sec-list" hidden>
+        <form id="filters" class="filters card">
+          <label>Data <input type="date" name="date"></label>
+          <label>Salão <select name="hall"><option value="">Todos</option></select></label>
+          <button type="submit" class="btn">Filtrar</button>
+          <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
+        </form>
 
-/* Formulários */
-.form label{display:grid;gap:8px;margin-bottom:10px;font-size:1.05rem}
-input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;border-radius:10px;padding:12px;width:100%;font-size:1.05rem}
-.grid.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid.five{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-@media (max-width:860px){.grid.two,.grid.five{grid-template-columns:1fr}}
+        <div class="card table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Início</th><th>Término</th><th>Salão</th>
+                <th>Apto</th><th>Morador</th><th>Materiais</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-parties"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
 
-/* Métricas */
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-.metric{background:linear-gradient(180deg,#102a40,#0d2133);border:1px solid #203247;border-radius:16px;padding:14px;text-align:center}
-.metric .k{color:var(--muted);font-size:1.05rem}
-.metric .v{font-size:var(--text-xl);font-weight:900}
-@media (max-width:720px){.metrics{grid-template-columns:1fr}}
+    <!-- Diálogos montados pelo JS -->
+    <dialog id="party-dialog"></dialog>
+    <dialog id="finalize-dialog"></dialog>
 
-/* Calendário */
-.calendar .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
-.calendar .cal-title{font-weight:800;font-size:1.2rem}
-.cal-grid{display:grid;grid-template-columns:repeat(7, minmax(0,1fr));gap:8px}
-.cal-cell{aspect-ratio:1/1;border-radius:16px;background:#13263a;border:1px solid #223548;position:relative}
-.cal-out{opacity:.36}
-.cal-today{outline:2px solid var(--secondary)}
-.cal-hit{all:unset;cursor:pointer;display:grid;place-items:center;width:100%;height:100%;font-size:1.3rem;font-weight:700;position:relative}
-.cal-dot{position:absolute;bottom:8px;right:8px;width:11px;height:11px;border-radius:50%;background:#18C07A;box-shadow:0 0 6px #18C07A}
+    <dialog id="view-dialog">
+      <div id="view-content"></div>
+      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
+    </dialog>
 
-/* Lista/Tabela */
-.table-wrapper{overflow:visible !important; max-height:none}
-.table{width:100%;border-collapse:collapse;font-size:1.05rem}
-.table thead th{border-bottom:1px solid #223548;padding:12px 10px;text-align:left}
-.table td{border-bottom:1px solid #223548;padding:12px 10px;text-align:left;vertical-align:top}
-.table tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
-.table tbody tr:hover{background:rgba(255,255,255,.04)}
+    <button id="fab-new" class="fab" hidden>＋</button>
+    <div id="toast" class="toast" hidden></div>
+    <div id="errbox" class="errbox" hidden></div>
+  </main>
 
-@media (max-width:760px){
-  .table thead{display:none}
-  .table, .table tbody, .table tr, .table td{display:block;width:100%}
-  .table tr{background:rgba(255,255,255,.02);border:1px solid #223548;border-radius:14px;padding:12px;margin-bottom:12px}
-  .table td{border:none;padding:8px 0}
-  .table td::before{content:attr(data-th) ": ";font-weight:700;color:#cfe3ff;display:inline-block;min-width:120px}
-}
-
-/* Badges/Chips */
-.badge{background:#0B74B8;color:#fff;border-radius:999px;padding:4px 9px;font-size:.95rem}
-.badge.ok{background:#159f6d}
-.badge.warn{background:#d8893a}
-.chip{display:inline-block;background:#0e2133;border:1px solid #2a3a4c;border-radius:999px;padding:4px 9px;margin:4px 6px 0 0;color:#cfe3ff;font-size:.95rem}
-
-/* Mensagens */
-.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0e2133;border:1px solid #2a3a4c;padding:12px 16px;border-radius:999px;z-index:9;font-size:1rem}
-.errbox{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#3b1215;color:#ffdede;border:1px solid #7d2b31;padding:12px 16px;border-radius:12px;z-index:9;font-size:1rem}
-.footer{opacity:.7;text-align:center;margin:16px 0;font-size:.95rem}
-
-/* ====== MOBILE LETRA MAIOR (aparelhos comuns <=480px) ====== */
-@media (max-width: 480px){
-  :root{
-    --text: 20px;
-    --text-lg: 22px;
-    --text-xl: 28px;
-  }
-  .brand{ font-size: 24px }
-  .metrics{ grid-template-columns: 1fr; gap: 14px }
-  .metric .v{ font-size: clamp(26px, 9vw, 32px) }
-  .cal-grid{ gap: 10px }
-  .cal-hit{ font-size: 1.5rem }
-  .cal-dot{ width: 13px; height: 13px }
-  .btn{ padding: 16px 20px; font-size:1.1rem }
-  .drawer{ width: 94vw }
-}
-
-/* ====== CELULARES GRANDES (ex.: Moto G 200) ====== */
-@media (min-width: 480px) and (max-width: 900px) and (min-height: 780px){
-  :root{
-    --text: 21px;
-    --text-lg: 23px;
-    --text-xl: 30px;
-  }
-  .container{ max-width: 1000px; padding: 0 14px }
-  .metrics{ gap: 14px }
-  .metric{ padding: 16px }
-  .metric .v{ font-size: clamp(30px, 9vw, 36px) }
-  .calendar .cal-header{ margin-bottom: 12px }
-  .cal-grid{ gap: 12px }
-  .cal-cell{ border-radius: 18px }
-  .cal-hit{ font-size: 1.7rem }
-  .cal-dot{ width: 14px; height: 14px }
-  .btn{ padding: 16px 22px; font-size: 1.1rem }
-  .fab{ width: 68px; height: 68px; font-size: 32px }
-}
-
-/* ====== MUITO ALTA (phablet/paisagem) ====== */
-@media (min-width: 600px) and (max-width: 900px) and (min-height: 900px){
-  .cal-grid{ gap: 14px }
-  .cal-hit{ font-size: 1.9rem }
-  .cal-dot{ width: 15px; height: 15px }
-}
-
-/* ====== MODO RETRATO COM LETRA GIGANTE (~3×) ====== */
-@media screen and (max-width: 900px) and (orientation: portrait) {
-  :root{
-    --text: 26px;      /* corpo */
-    --text-lg: 30px;   /* subtítulos */
-    --text-xl: 36px;   /* títulos/números */
-  }
-  .cal-grid{ gap: 14px }
-  .cal-cell{ border-radius: 20px }
-  .cal-hit{ font-size: 2.2rem; font-weight: 800 }  /* ~35px */
-  .cal-dot{ width: 18px; height: 18px }
-  .metric{ padding: 20px }
-  .metric .k{ font-size: 1.4rem }
-  .metric .v{ font-size: 2.4rem }
-  .btn{ padding: 20px 26px; font-size: 1.3rem; font-weight: 700 }
-  .fab{ width: 80px; height: 80px; font-size: 38px }
-  .drawer-item{ font-size: 1.4rem; padding: 16px }
-  .table{ font-size: 1.3rem }
-  .table td::before{ min-width: 140px }
-}
+  <footer class="footer"><small>Uso interno — Firestore (sem anexos). App instalável.</small></footer>
+</body>
+</html>
