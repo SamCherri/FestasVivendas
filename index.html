@@ -5,21 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0B74B8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css" />
   <style>[hidden]{display:none!important}</style>
-
-  <script type="module" src="config.js?v=7"></script>
-  <script type="module" src="app.js?v=7"></script>
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js"></script>
 </head>
 <body>
   <!-- Topo -->
   <header class="topbar">
-    <button id="btn-menu" class="btn ghost icon" aria-label="Abrir menu" type="button">☰</button>
+    <button id="btn-menu" class="btn ghost icon" aria-label="Menu">☰</button>
     <div class="brand">
       <img src="favicon.svg" alt="" width="24" height="24" />
       <span>Vivendas de La Salle — Festas</span>
@@ -30,16 +28,16 @@
   <aside id="drawer" class="drawer" hidden>
     <div class="drawer-head">
       <strong>Menu</strong>
-      <button id="btn-close-drawer" class="btn link" type="button">Fechar</button>
+      <button id="btn-close-drawer" class="btn link">Fechar</button>
     </div>
     <nav class="drawer-nav">
-      <button class="drawer-item" data-go="calendar" type="button">📅 Calendário</button>
-      <button class="drawer-item" data-go="list" type="button">📋 Festas</button>
+      <button class="drawer-item" data-go="calendar">📅 Calendário</button>
+      <button class="drawer-item" data-go="list">📋 Festas</button>
       <hr/>
-      <button class="drawer-item" id="m-new" type="button">➕ Nova Festa</button>
-      <button class="drawer-item" id="m-notify" type="button">🔔 Ativar lembretes</button>
-      <button class="drawer-item" id="m-install" type="button">⬇️ Instalar app</button>
-      <button class="drawer-item" id="m-logout" type="button">🚪 Sair</button>
+      <button class="drawer-item" id="m-new">➕ Nova Festa</button>
+      <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
+      <button class="drawer-item" id="m-install" hidden>📲 Instalar app</button>
+      <button class="drawer-item" id="m-logout">🚪 Sair</button>
     </nav>
   </aside>
   <div id="backdrop" class="backdrop" hidden></div>
@@ -48,17 +46,19 @@
     <!-- LOGIN -->
     <section id="login-section" class="card center-v">
       <h1>Acesso interno</h1>
-      <form id="login-form" class="form" autocomplete="on">
+      <form id="login-form" class="form">
         <label>E-mail
-          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com" autocomplete="username">
+          <input name="email" type="email" required placeholder="ex: zelador@vivendas.com">
         </label>
         <label>Senha
-          <input type="password" name="password" required minlength="6" placeholder="••••••••" autocomplete="current-password">
+          <input type="password" name="password" required minlength="6" placeholder="••••••••">
         </label>
-        <button class="btn primary" id="btn-login" type="submit">Entrar</button>
-        <button class="btn ghost" id="btn-install-login" type="button" style="margin-top:10px">Instalar app</button>
+        <button class="btn primary" id="btn-login">Entrar</button>
       </form>
-      <div id="login-error-box" class="alert" hidden role="alert" aria-live="polite"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button id="btn-install" class="btn ghost" hidden>📲 Instalar app</button>
+        <button id="btn-notify-login" class="btn ghost">🔔 Ativar lembretes</button>
+      </div>
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
 
@@ -74,9 +74,9 @@
 
         <section class="card calendar">
           <header class="cal-header">
-            <button id="cal-prev" class="btn" type="button">◀</button>
+            <button id="cal-prev" class="btn">◀</button>
             <div id="cal-title" class="cal-title">Mês Ano</div>
-            <button id="cal-next" class="btn" type="button">▶</button>
+            <button id="cal-next" class="btn">▶</button>
           </header>
           <div id="cal-grid" class="cal-grid"></div>
           <p class="tiny muted" style="margin-top:8px">
@@ -108,30 +108,19 @@
       </section>
     </section>
 
-    <!-- Diálogos -->
+    <!-- DIALOGS -->
     <dialog id="party-dialog"></dialog>
     <dialog id="finalize-dialog"></dialog>
-
     <dialog id="view-dialog">
       <div id="view-content"></div>
-      <menu><button id="btn-close-view" class="btn" type="button">Fechar</button></menu>
+      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
     </dialog>
 
-    <!-- Botão flutuante -->
-    <button id="fab-new" class="fab" hidden type="button">＋</button>
-
-    <!-- Mensagens -->
+    <button id="fab-new" class="fab" hidden>＋</button>
     <div id="toast" class="toast" hidden></div>
     <div id="errbox" class="errbox" hidden></div>
   </main>
 
   <footer class="footer"><small>Uso interno — Firestore (sem anexos). App instalável.</small></footer>
-
-  <!-- Service Worker (cache v7) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=7').catch(()=>{});
-    }
-  </script>
 </body>
 </html>
