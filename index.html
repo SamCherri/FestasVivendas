@@ -27,15 +27,16 @@
   <aside id="drawer" class="drawer" hidden>
     <div class="drawer-head">
       <strong>Menu</strong>
-      <button id="btn-close-drawer" class="btn link">Fechar</button>
+      <button id="btn-close-drawer" class="btn link" type="button">Fechar</button>
     </div>
     <nav class="drawer-nav">
-      <button class="drawer-item" data-go="calendar">📅 Calendário</button>
-      <button class="drawer-item" data-go="list">📋 Festas</button>
+      <button class="drawer-item" data-go="calendar" type="button">📅 Calendário</button>
+      <button class="drawer-item" data-go="list" type="button">📋 Festas</button>
       <hr/>
-      <button class="drawer-item" id="m-new">➕ Nova Festa</button>
-      <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
-      <button class="drawer-item" id="m-logout">🚪 Sair</button>
+      <button class="drawer-item" id="m-new" type="button">➕ Nova Festa</button>
+      <button class="drawer-item" id="m-notify" type="button">🔔 Ativar lembretes</button>
+      <button class="drawer-item" id="m-install" type="button">⬇️ Instalar app</button>
+      <button class="drawer-item" id="m-logout" type="button">🚪 Sair</button>
     </nav>
   </aside>
   <div id="backdrop" class="backdrop" hidden></div>
@@ -51,7 +52,9 @@
         <label>Senha
           <input type="password" name="password" required minlength="6" placeholder="••••••••">
         </label>
-        <button class="btn primary" id="btn-login">Entrar</button>
+        <!-- IMPORTANTE: types definidos -->
+        <button class="btn primary" id="btn-login" type="submit">Entrar</button>
+        <button class="btn ghost" id="btn-install-login" type="button" style="margin-top:10px">Instalar app</button>
       </form>
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
@@ -68,9 +71,9 @@
 
         <section class="card calendar">
           <header class="cal-header">
-            <button id="cal-prev" class="btn">◀</button>
+            <button id="cal-prev" class="btn" type="button">◀</button>
             <div id="cal-title" class="cal-title">Mês Ano</div>
-            <button id="cal-next" class="btn">▶</button>
+            <button id="cal-next" class="btn" type="button">▶</button>
           </header>
           <div id="cal-grid" class="cal-grid"></div>
           <p class="tiny muted" style="margin-top:8px">
@@ -107,10 +110,10 @@
 
     <dialog id="view-dialog">
       <div id="view-content"></div>
-      <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
+      <menu><button id="btn-close-view" class="btn" type="button">Fechar</button></menu>
     </dialog>
 
-    <button id="fab-new" class="fab" hidden>＋</button>
+    <button id="fab-new" class="fab" hidden type="button">＋</button>
     <div id="toast" class="toast" hidden></div>
     <div id="errbox" class="errbox" hidden></div>
   </main>
