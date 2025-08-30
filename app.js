@@ -1,7 +1,7 @@
 // app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
 
-// Firebase (CDN)
+// Firebase via CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -20,7 +20,7 @@ let state = {
   monthBase: new Date(),
   halls: ["Gourmet", "Menor"],
   parties: [],
-  view: "calendar" // "calendar" | "list"
+  view: "calendar"
 };
 
 // PWA install
@@ -40,20 +40,17 @@ function init() {
     if (u) loadParties().then(()=>{ renderAll(); showView(state.view); });
   });
 
-  ensureHelpers();
   fillHallSelects();
   bindEvents();
   renderCalendar();
   startReminderLoop();
 }
 
-function ensureHelpers() {
-  const style = document.createElement("style");
-  style.textContent = `
-    .center-v{display:grid;min-height:60vh;place-items:center}
-    .action-btn{margin-right:6px}
-  `;
-  document.head.appendChild(style);
+// Garante que init só rode quando o HTML estiver pronto
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
 }
 
 /* ========= Drawer ========= */
@@ -71,7 +68,7 @@ function closeDrawer(){
 }
 
 function bindEvents() {
-  // Login via SUBMIT (funciona com Enter e com clique)
+  // Login via SUBMIT (Enter e clique)
   $("#login-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = $("#login-form [name=email]").value.trim();
@@ -79,6 +76,12 @@ function bindEvents() {
     if (!email || !pass) return err("Preencha e-mail e senha.");
     try { await signInWithEmailAndPassword(auth, email, pass); toast("Login ok."); }
     catch { err("Falha no login. Confira e-mail e senha."); }
+  });
+
+  // Fallback: clique no botão "Entrar" chama o submit
+  $("#btn-login")?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    $("#login-form")?.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
   });
 
   // Menu
@@ -92,7 +95,7 @@ function bindEvents() {
   $("#m-install")?.addEventListener("click", ()=>{ closeDrawer(); triggerInstall(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
 
-  // Instalar no login
+  // Instalar também na tela de login
   $("#btn-install-login")?.addEventListener("click", triggerInstall);
 
   // Ações gerais
@@ -218,7 +221,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela (responsiva p/ “cards” no celular) ========= */
+/* ========= Tabela ========= */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -481,7 +484,4 @@ function maybeNotify(p, title){
   new Notification(title, { body: `${p.date} • ${p.hall} • ${p.apartment} - ${p.resident_name}` });
 }
 
-/* ========= Util ========= */
-function fmtDate(d){
-  const y = d.getFullYear();
-  const m = Stri
+/* ======
