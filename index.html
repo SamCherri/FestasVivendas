@@ -10,12 +10,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
 
-  <!-- CSS refatorado -->
   <link rel="stylesheet" href="style.css?v=7" />
-  <!-- Garante que elementos com [hidden] sumam mesmo sem JS -->
   <style>[hidden]{display:none!important}</style>
 
-  <!-- App refatorado -->
   <script type="module" src="config.js?v=7"></script>
   <script type="module" src="app.js?v=7"></script>
 </head>
@@ -61,10 +58,7 @@
         <button class="btn primary" id="btn-login" type="submit">Entrar</button>
         <button class="btn ghost" id="btn-install-login" type="button" style="margin-top:10px">Instalar app</button>
       </form>
-
-      <!-- Erros de login aparecem aqui (HTML) -->
       <div id="login-error-box" class="alert" hidden role="alert" aria-live="polite"></div>
-
       <p class="muted tiny">Problemas? Contate a administração.</p>
     </section>
 
@@ -132,5 +126,12 @@
   </main>
 
   <footer class="footer"><small>Uso interno — Firestore (sem anexos). App instalável.</small></footer>
+
+  <!-- Service Worker (cache v7) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js?v=7').catch(()=>{});
+    }
+  </script>
 </body>
 </html>
