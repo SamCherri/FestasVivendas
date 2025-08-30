@@ -1,9 +1,22 @@
+/* ============================
+   Vivendas — UI base (v7)
+   Foco: legibilidade no celular,
+   sem rolagem lateral, e sem
+   interferir no fluxo de login.
+   ============================ */
+
 :root{
+  /* Cores */
   --bg:#0b1420; --panel:#0f2031; --card:#0f2235; --muted:#b8c9dc;
   --primary:#0B74B8; --secondary:#18C07A; --danger:#e74c3c; --white:#fff;
+
+  /* Tipografia responsiva (maior no mobile) */
   --text: clamp(16px, 3.9vw, 18px);
   --text-lg: clamp(18px, 4.6vw, 20px);
   --text-xl: clamp(20px, 5.6vw, 24px);
+
+  /* Layout */
+  --topbar-h: 56px;
   --radius:16px; --space:12px;
 }
 
@@ -12,82 +25,109 @@ html{scroll-behavior:smooth}
 html,body{
   margin:0; padding:0;
   background:linear-gradient(180deg,#0b1420,#0a1623);
-  color:#e6f0ff; font:400 var(--text)/1.55 system-ui,-apple-system,Segoe UI,Roboto;
-  overflow-x:hidden; /* evita barra horizontal */
+  color:#e6f0ff;
+  font:400 var(--text)/1.55 system-ui,-apple-system,Segoe UI,Roboto;
+  overflow-x:hidden; /* nunca barra horizontal */
 }
 img{max-width:100%;height:auto;display:block}
-.visually-hidden{position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
 :focus-visible{outline:2px solid var(--primary); outline-offset:2px}
 
-/* Utilidades fixas */
-.center-v{display:grid;min-height:60vh;place-items:center}
-.action-btn{margin-right:6px}
+.center-v{
+  display:grid; place-items:center;
+  min-height: calc(100vh - var(--topbar-h) - 32px);
+  width:min(560px, 92vw);
+  margin: clamp(8px,4vw,16px) auto;
+}
 
-/* Topbar */
+/* ---- Topbar ---- */
 .topbar{
   background:linear-gradient(90deg,#0b75b8,#15a16e);
-  color:var(--white); padding:12px; position:sticky; top:0; z-index:8;
-  display:flex; align-items:center; gap:10px; box-shadow:0 8px 26px rgba(0,0,0,.35)
+  color:var(--white);
+  padding:12px;
+  position:sticky; top:0; z-index:8;
+  display:flex; align-items:center; gap:10px;
+  box-shadow:0 8px 26px rgba(0,0,0,.35);
+  min-height: var(--topbar-h);
 }
-.icon{padding:10px 12px;border-radius:999px}
-.icon:hover{background:rgba(255,255,255,.08)}
 .brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:var(--text-lg)}
 .container{width:100%;max-width:1100px;margin:14px auto;padding:0 clamp(10px,4vw,20px)}
 
-/* Menu lateral */
+/* ---- Drawer (menu lateral) ---- */
 .drawer{
-  position:fixed; inset:0 auto 0 0; width:min(86vw, 340px);
-  background:rgba(16,39,60,.96); backdrop-filter:blur(6px);
-  border-right:1px solid #1e3145; transform:translateX(-100%);
-  transition:transform .18s ease; z-index:9; padding:18px
+  position:fixed; inset:0 auto 0 0;
+  width:min(86vw, 340px);
+  background:rgba(16,39,60,.96);
+  backdrop-filter:blur(6px);
+  border-right:1px solid #1e3145;
+  transform:translateX(-100%);
+  transition:transform .18s ease;
+  z-index:9; padding:18px
 }
 .drawer.open{transform:none}
 .drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .drawer-nav{display:grid;gap:10px}
-.drawer-item{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;border-radius:14px;padding:14px;text-align:left;font-size:1.1rem}
+.drawer-item{
+  background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
+  border-radius:14px;padding:14px;text-align:left;font-size:1.1rem
+}
 .drawer-item:hover{background:#123149}
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8}
+body.no-scroll{overflow:hidden}
 
-/* Botões */
+/* ---- Botões ---- */
 .btn{
   appearance:none; border:1px solid #2b3a4a; background:#13283b; color:#e6f0ff;
   border-radius:999px; padding:14px 18px; cursor:pointer; font-size:inherit;
   transition:transform .06s ease,opacity .15s,box-shadow .15s; max-width:100%
 }
-.btn.tiny{ padding:8px 10px; font-size:.95rem }
+.btn.tiny{padding:8px 10px;font-size:.95rem}
 .btn:hover{opacity:.92; box-shadow:0 8px 20px rgba(0,0,0,.25)}
 .btn:active{transform:scale(.98)}
 .btn.primary{background:linear-gradient(90deg,var(--primary),#15a16e);border:0;color:#fff;font-weight:800}
 .btn.ghost{background:transparent;border-color:#3a5066}
 .btn.link{background:transparent;border:0;text-decoration:underline}
 .btn.danger{background:#e74c3c;border:0;color:#fff}
+.icon{padding:10px 12px;border-radius:999px}
+.icon:hover{background:rgba(255,255,255,.08)}
 .fab{
   position:fixed; right:18px; bottom:18px; background:#22c55e;
   width:64px; height:64px; border-radius:50%; border:0; color:#fff;
   font-size:30px; box-shadow:0 12px 30px rgba(0,0,0,.35)
 }
 
-/* Cartões / textos */
+/* ---- Cartões / textos ---- */
 .card{background:rgba(15,34,53,.96); border:1px solid #203247; border-radius:var(--radius); padding:16px; box-shadow:0 10px 26px rgba(0,0,0,.30); margin-bottom:16px}
 .center{text-align:center}
 .muted{color:var(--muted)}
 .tiny{font-size:.95em}
 
-/* Formulários */
+/* ---- Alerta HTML (ex.: erro de login) ---- */
+.alert{
+  background:#3b1215;border:1px solid #7d2b31;color:#ffdede;border-radius:12px;
+  padding:12px 14px;margin-top:12px;width:100%
+}
+.alert code{
+  background:#561a20;border:1px solid #8a2e36;color:#ffe2e2;padding:0 6px;border-radius:6px
+}
+
+/* ---- Formulários ---- */
 .form label{display:grid;gap:8px;margin-bottom:10px;font-size:1.05rem}
-input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;border-radius:10px;padding:12px;width:100%;font-size:1.05rem}
+input,select,textarea{
+  background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;border-radius:10px;
+  padding:12px;width:100%;font-size:1.05rem
+}
 .grid.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid.five{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 @media (max-width:860px){.grid.two,.grid.five{grid-template-columns:1fr}}
 
-/* Métricas */
+/* ---- Métricas ---- */
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
 .metric{background:linear-gradient(180deg,#102a40,#0d2133);border:1px solid #203247;border-radius:16px;padding:14px;text-align:center}
 .metric .k{color:var(--muted);font-size:1.05rem}
 .metric .v{font-size:var(--text-xl);font-weight:900}
 @media (max-width:720px){.metrics{grid-template-columns:1fr}}
 
-/* Calendário */
+/* ---- Calendário ---- */
 .calendar .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
 .calendar .cal-title{font-weight:800;font-size:1.2rem}
 .cal-grid{display:grid;grid-template-columns:repeat(7, minmax(0,1fr));gap:8px}
@@ -97,14 +137,13 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
 .cal-hit{all:unset;cursor:pointer;display:grid;place-items:center;width:100%;height:100%;font-size:1.3rem;font-weight:700;position:relative}
 .cal-dot{position:absolute;bottom:8px;right:8px;width:11px;height:11px;border-radius:50%;background:#18C07A;box-shadow:0 0 6px #18C07A}
 
-/* Lista/Tabela */
+/* ---- Tabela responsiva ---- */
 .table-wrapper{overflow:visible !important; max-height:none}
 .table{width:100%;border-collapse:collapse;font-size:1.05rem}
 .table thead th{border-bottom:1px solid #223548;padding:12px 10px;text-align:left}
 .table td{border-bottom:1px solid #223548;padding:12px 10px;text-align:left;vertical-align:top}
 .table tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
 .table tbody tr:hover{background:rgba(255,255,255,.04)}
-
 @media (max-width:760px){
   .table thead{display:none}
   .table, .table tbody, .table tr, .table td{display:block;width:100%}
@@ -113,47 +152,24 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
   .table td::before{content:attr(data-th) ": ";font-weight:700;color:#cfe3ff;display:inline-block;min-width:120px}
 }
 
-/* Badges/Chips */
+/* ---- Badges / Chips ---- */
 .badge{background:#0B74B8;color:#fff;border-radius:999px;padding:4px 9px;font-size:.95rem}
 .badge.ok{background:#159f6d}
 .badge.warn{background:#d8893a}
 .chip{display:inline-block;background:#0e2133;border:1px solid #2a3a4c;border-radius:999px;padding:4px 9px;margin:4px 6px 0 0;color:#cfe3ff;font-size:.95rem}
 
-/* Mensagens */
+/* ---- Mensagens flutuantes ---- */
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0e2133;border:1px solid #2a3a4c;padding:12px 16px;border-radius:999px;z-index:9;font-size:1rem}
 .errbox{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#3b1215;color:#ffdede;border:1px solid #7d2b31;padding:12px 16px;border-radius:12px;z-index:9;font-size:1rem}
 .footer{opacity:.7;text-align:center;margin:16px 0;font-size:.95rem}
 
-/* trava rolagem do fundo quando o menu abre */
-body.no-scroll { overflow: hidden }
-
-/* ====== CELULARES (≤ 900px de largura) — LETRA GIGANTE (~3×) ====== */
-@media screen and (max-width: 900px) {
-  :root{
-    --text: 26px;      /* corpo */
-    --text-lg: 30px;   /* subtítulos */
-    --text-xl: 36px;   /* títulos/números */
-  }
-
-  /* calendário */
-  .cal-grid{ gap: 14px }
-  .cal-cell{ border-radius: 20px }
-  .cal-hit{ font-size: 2.2rem; font-weight: 800 }
-  .cal-dot{ width: 18px; height: 18px }
-
-  /* métricas */
-  .metric{ padding: 20px }
-  .metric .k{ font-size: 1.4rem }
-  .metric .v{ font-size: 2.4rem }
-
-  /* botões */
-  .btn{ padding: 20px 26px; font-size: 1.3rem; font-weight: 700 }
-  .fab{ width: 80px; height: 80px; font-size: 38px }
-
-  /* menu lateral */
+/* ---- “3x” em celulares grandes (retrato e paisagem) ---- */
+@media (max-width: 900px) {
+  :root{ --text: 26px; --text-lg: 30px; --text-xl: 36px; }
+  .cal-grid{ gap: 14px } .cal-cell{ border-radius: 20px }
+  .cal-hit{ font-size: 2.2rem; font-weight: 800 } .cal-dot{ width: 18px; height: 18px }
+  .metric{ padding: 20px } .metric .k{ font-size: 1.4rem } .metric .v{ font-size: 2.4rem }
+  .btn{ padding: 20px 26px; font-size: 1.3rem; font-weight: 700 } .fab{ width: 80px; height: 80px; font-size: 38px }
   .drawer-item{ font-size: 1.4rem; padding: 16px }
-
-  /* tabela */
-  .table{ font-size: 1.3rem }
-  .table td::before{ min-width: 140px }
+  .table{ font-size: 1.3rem } .table td::before{ min-width: 140px }
 }
