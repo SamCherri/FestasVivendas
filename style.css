@@ -19,6 +19,10 @@ img{max-width:100%;height:auto;display:block}
 .visually-hidden{position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
 :focus-visible{outline:2px solid var(--primary); outline-offset:2px}
 
+/* Utilidades fixas (antes eram injetadas via JS) */
+.center-v{display:grid;min-height:60vh;place-items:center}
+.action-btn{margin-right:6px}
+
 /* Topbar */
 .topbar{
   background:linear-gradient(90deg,#0b75b8,#15a16e);
@@ -30,7 +34,7 @@ img{max-width:100%;height:auto;display:block}
 .brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:var(--text-lg)}
 .container{width:100%;max-width:1100px;margin:14px auto;padding:0 clamp(10px,4vw,20px)}
 
-/* Drawer (menu lateral) */
+/* Menu lateral */
 .drawer{
   position:fixed; inset:0 auto 0 0; width:min(86vw, 340px);
   background:rgba(16,39,60,.96); backdrop-filter:blur(6px);
@@ -123,8 +127,8 @@ input,select,textarea{background:#0e2133;border:1px solid #2a3a4c;color:#e6f0ff;
 /* trava rolagem do fundo quando o menu abre */
 body.no-scroll { overflow: hidden }
 
-/* ====== CELULARES (≤900px de largura e tela de toque) — LETRA GIGANTE (~3×) ====== */
-@media screen and (max-width: 900px) and (pointer: coarse) {
+/* ====== CELULARES (≤ 900px de largura) — LETRA GIGANTE (~3×) ====== */
+@media screen and (max-width: 900px) {
   :root{
     --text: 26px;      /* corpo */
     --text-lg: 30px;   /* subtítulos */
