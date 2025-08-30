@@ -19,7 +19,7 @@ img{max-width:100%;height:auto;display:block}
 .visually-hidden{position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
 :focus-visible{outline:2px solid var(--primary); outline-offset:2px}
 
-/* Utilidades fixas (antes eram injetadas via JS) */
+/* Utilidades fixas */
 .center-v{display:grid;min-height:60vh;place-items:center}
 .action-btn{margin-right:6px}
 
