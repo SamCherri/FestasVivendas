@@ -1,7 +1,4 @@
-// app.js
 import { firebaseConfig, APP_NAME } from "./config.js";
-
-// Firebase (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -9,27 +6,20 @@ import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 
-/* ========= Firebase ========= */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-/* ========= Estado ========= */
 let state = {
   user: null,
   monthBase: new Date(),
   halls: ["Gourmet", "Menor"],
   parties: [],
-  view: "calendar" // "calendar" | "list"
+  view: "calendar"
 };
-
-// PWA install
 let deferredPrompt = null;
-let installTried = false;
-
 document.title = APP_NAME;
 
-/* ========= Init ========= */
 function init() {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
@@ -52,26 +42,16 @@ function ensureHelpers() {
   style.textContent = `
     .center-v{display:grid;min-height:60vh;place-items:center}
     .action-btn{margin-right:6px}
+    .cal-dot{position:absolute;right:8px;bottom:8px;width:9px;height:9px;border-radius:50%;
+      background:#19d38a;box-shadow:0 0 0 3px rgba(24,192,122,.14)}
   `;
   document.head.appendChild(style);
 }
 
-/* ========= Drawer ========= */
-function openDrawer(){
-  $("#drawer").hidden=false; $("#backdrop").hidden=false;
-  document.body.classList.add("no-scroll");
-  setTimeout(()=>$("#drawer").classList.add("open"),0);
-}
-function closeDrawer(){
-  $("#drawer").classList.remove("open");
-  setTimeout(()=>{
-    $("#drawer").hidden=true; $("#backdrop").hidden=true;
-    document.body.classList.remove("no-scroll");
-  },180);
-}
+function openDrawer(){ $("#drawer").hidden=false; $("#backdrop").hidden=false; setTimeout(()=>$("#drawer").classList.add("open"),0); }
+function closeDrawer(){ $("#drawer").classList.remove("open"); setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; },180); }
 
 function bindEvents() {
-  // Login
   $("#btn-login")?.addEventListener("click", async (e) => {
     e.preventDefault();
     const email = $("#login-form [name=email]").value.trim();
@@ -81,7 +61,6 @@ function bindEvents() {
     catch { err("Falha no login. Confira e-mail e senha."); }
   });
 
-  // Menu
   $("#btn-menu")?.addEventListener("click", openDrawer);
   $("#btn-close-drawer")?.addEventListener("click", closeDrawer);
   $("#backdrop")?.addEventListener("click", closeDrawer);
@@ -89,38 +68,16 @@ function bindEvents() {
   $('[data-go="list"]')?.addEventListener("click", ()=>{ showView("list"); closeDrawer(); });
   $("#m-new")?.addEventListener("click", ()=>{ closeDrawer(); openPartyDialog(); });
   $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
-  $("#m-install")?.addEventListener("click", ()=>{ closeDrawer(); triggerInstall(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
 
-  // Instalar no login
-  $("#btn-install-login")?.addEventListener("click", triggerInstall);
-
-  // Ações gerais
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", () => $("#view-dialog").close());
 
-  // Calendário
   $("#cal-prev")?.addEventListener("click", () => { shiftMonth(-1); });
   $("#cal-next")?.addEventListener("click", () => { shiftMonth(1); });
 
-  // Filtros (lista)
   $("#filters")?.addEventListener("submit", (e) => { e.preventDefault(); renderTable(); });
   $("#btn-clear-filters")?.addEventListener("click", () => { $("#filters").reset(); renderTable(); });
-}
-
-/* Instalação PWA */
-async function triggerInstall(){
-  try {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") toast("Instalação iniciada.");
-      deferredPrompt = null;
-    } else if (!installTried) {
-      installTried = true;
-      toast("Se o botão 'Instalar' aparecer no navegador, toque nele.");
-    }
-  } catch { err("Não foi possível iniciar a instalação."); }
 }
 
 function showView(view){
@@ -150,7 +107,7 @@ function toggleAuthUI() {
   $("#fab-new").hidden = !logged;
 }
 
-/* ========= Firestore ========= */
+/* Firestore */
 async function loadParties() {
   const snap = await getDocs(collection(db, "parties"));
   state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -159,7 +116,7 @@ async function createParty(data) { const ref = await addDoc(collection(db, "part
 async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), data); }
 async function deleteParty(id) { await deleteDoc(doc(db, "parties", id)); }
 
-/* ========= Calendário & KPIs ========= */
+/* Calendário & KPIs */
 function shiftMonth(n){ const d = new Date(state.monthBase); d.setMonth(d.getMonth()+n); state.monthBase = d; renderCalendar(); }
 function renderAll(){ renderCalendar(); renderTable(); updateKPIs(); }
 
@@ -198,7 +155,6 @@ function renderCalendar(){
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    // bolinha verde sem número
     const has = state.parties.some(p => p.date === dateStr);
     if (has) {
       const dot = document.createElement("span");
@@ -218,7 +174,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela (responsiva p/ “cards” no celular) ========= */
+/* Tabela (cards no mobile) */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -287,7 +243,7 @@ function matSummary(p){
   return `${req}${brk?` • quebrados: ${brk}`:""}`;
 }
 
-/* ========= Nova/Editar ========= */
+/* Nova/Editar */
 function openPartyDialog(existing=null){
   const dlg = $("#party-dialog");
   dlg.innerHTML = `
@@ -362,7 +318,7 @@ async function savePartyFromForm(){
   } catch { err("Não foi possível salvar."); }
 }
 
-/* ========= Finalizar ========= */
+/* Finalizar */
 let currentFinalizeId = null;
 
 function openFinalize(p){
@@ -422,7 +378,7 @@ async function saveFinalizeFromForm(){
   } catch { err("Não foi possível salvar a finalização."); }
 }
 
-/* ========= Ver & Convidados ========= */
+/* Ver & Convidados */
 function openView(p){
   const el = $("#view-content");
   const guests = (p.guests||[]).map(g=>`<span class="chip">${esc(g)}</span>`).join(" ");
@@ -454,7 +410,7 @@ async function openGuests(p){
   catch { err("Não foi possível atualizar convidados."); }
 }
 
-/* ========= Lembretes ========= */
+/* Lembretes */
 function requestNotify(){
   if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
   Notification.requestPermission().then((perm)=>{
@@ -481,11 +437,12 @@ function maybeNotify(p, title){
   new Notification(title, { body: `${p.date} • ${p.hall} • ${p.apartment} - ${p.resident_name}` });
 }
 
-/* ========= Util ========= */
-function fmtDate(d){
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-function cap(
+/* Util */
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; setTimeout(()=>t.hidden=true,2000); }
+function err(msg){ const e=$("#errbox"); e.textContent=msg; e.hidden=false; setTimeout(()=>e.hidden=true,2500); }
+function esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+function num(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
+
+init();
