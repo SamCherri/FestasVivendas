@@ -1,25 +1,16 @@
-/* ==========================================================
-   Vivendas — App (v7 refatorado)
-   - Login com mensagens claras na página
-   - Troca Login/App garantida (guardas)
-   - Calendário com “bolinha verde”
-   - Lista, Nova/Editar, Finalizar, Convidados
-   - Lembretes (3 e 1 dias)
-   - Menu lateral + PWA instalar
-   ========================================================== */
-
+/* Vivendas — App (v7) */
 import { firebaseConfig, APP_NAME } from "./config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ---------- Helpers DOM ---------- */
+/* DOM helpers */
 const $  = (s)=>document.querySelector(s);
 const $$ = (s)=>Array.from(document.querySelectorAll(s));
 const txt = (el, v)=>{ if (el) el.textContent = v; };
 const show = (el, yes)=>{ if (el) el.hidden = !yes; };
 
-/* ---------- Estado ---------- */
+/* Estado */
 let state = {
   user: null,
   monthBase: new Date(),
@@ -27,22 +18,21 @@ let state = {
   view: "calendar"
 };
 
-/* ---------- Firebase ---------- */
+/* Firebase */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-/* ---------- PWA install ---------- */
+/* PWA install */
 let deferredPrompt = null, installTried = false;
 
-/* ---------- Init seguro ---------- */
 document.title = APP_NAME;
 
 function init() {
-  // Service worker (versão incrementada no index)
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=6").catch(()=>{});
+  // SW (cache v7)
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=7").catch(()=>{});
 
-  // Fonte grande em mobile (extra via classe)
+  // Fonte grande em mobile
   const mq = window.matchMedia("(max-width: 900px)");
   const html = document.documentElement;
   const setMobile = () => mq.matches ? html.classList.add("is-mobile") : html.classList.remove("is-mobile");
@@ -59,7 +49,7 @@ function init() {
     if (u) { await loadParties(); renderAll(); showView(state.view); }
   });
 
-  // Controles fixos
+  // UI
   bindEvents();
   fillHallSelects();
   renderCalendar();
@@ -67,7 +57,7 @@ function init() {
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 
-/* ---------- Troca de telas ---------- */
+/* Troca de telas */
 function toggleAuthUI(){
   const logged = !!state.user;
   show($("#login-section"), !logged);
@@ -75,7 +65,7 @@ function toggleAuthUI(){
   if ($("#fab-new")) $("#fab-new").hidden = !logged;
 }
 
-/* ---------- Eventos ---------- */
+/* Eventos */
 function bindEvents(){
   // Login
   $("#login-form")?.addEventListener("submit", onLoginSubmit);
@@ -93,7 +83,7 @@ function bindEvents(){
   $("#m-install")?.addEventListener("click", ()=>{ closeDrawer(); triggerInstall(); });
   $("#m-logout")?.addEventListener("click", async()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
 
-  // Ações gerais
+  // Gerais
   $("#fab-new")?.addEventListener("click", ()=> openPartyDialog());
   $("#btn-close-view")?.addEventListener("click", ()=> $("#view-dialog").close());
 
@@ -101,12 +91,12 @@ function bindEvents(){
   $("#cal-prev")?.addEventListener("click", ()=> shiftMonth(-1));
   $("#cal-next")?.addEventListener("click", ()=> shiftMonth(1));
 
-  // Lista / filtros
+  // Filtros
   $("#filters")?.addEventListener("submit",(e)=>{ e.preventDefault(); renderTable(); });
   $("#btn-clear-filters")?.addEventListener("click",()=>{ $("#filters").reset(); renderTable(); });
 }
 
-/* ---------- Login ---------- */
+/* Login */
 async function onLoginSubmit(e){
   e.preventDefault();
   hideLoginError();
@@ -151,11 +141,11 @@ function explainAuthError(ex){
   return { friendly, code, tips };
 }
 
-/* ---------- Drawer ---------- */
+/* Drawer */
 function openDrawer(){ $("#drawer").hidden=false; $("#backdrop").hidden=false; document.body.classList.add("no-scroll"); setTimeout(()=>$("#drawer").classList.add("open"),0); }
 function closeDrawer(){ $("#drawer").classList.remove("open"); setTimeout(()=>{ $("#drawer").hidden=true; $("#backdrop").hidden=true; document.body.classList.remove("no-scroll"); },180); }
 
-/* ---------- PWA install ---------- */
+/* PWA install */
 async function triggerInstall(){
   try{
     if (deferredPrompt) {
@@ -170,7 +160,7 @@ async function triggerInstall(){
   }catch{ err("Não foi possível iniciar a instalação."); }
 }
 
-/* ---------- Navegação interna ---------- */
+/* Navegação interna */
 function showView(view){
   state.view = view;
   show($("#sec-calendar"), view==="calendar");
@@ -178,7 +168,7 @@ function showView(view){
   (view==="calendar"? $("#sec-calendar") : $("#sec-list"))?.scrollIntoView({behavior:"smooth"});
 }
 
-/* ---------- Firestore ---------- */
+/* Firestore */
 async function loadParties(){
   const snap = await getDocs(collection(db,"parties"));
   state.parties = snap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -187,7 +177,7 @@ async function createParty(data){ const ref = await addDoc(collection(db,"partie
 async function updateParty(id, data){ await updateDoc(doc(db,"parties",id), data); }
 async function deleteParty(id){ await deleteDoc(doc(db,"parties",id)); }
 
-/* ---------- KPIs / Calendário ---------- */
+/* KPIs / Calendário */
 function renderAll(){ renderCalendar(); renderTable(); updateKPIs(); }
 
 function updateKPIs(){
@@ -224,7 +214,7 @@ function renderCalendar(){
     hit.className = "cal-hit"; hit.title = dateStr;
     hit.innerHTML = `<div>${d.getDate()}</div>`;
 
-    // bolinha verde (sem número)
+    // bolinha verde
     if (state.parties.some(p=>p.date===dateStr)) {
       const dot = document.createElement("span"); dot.className="cal-dot"; hit.appendChild(dot);
     }
@@ -238,7 +228,7 @@ function renderCalendar(){
   }
 }
 
-/* ---------- Lista / Tabela ---------- */
+/* Lista */
 function renderTable(){
   const tbody = $("#tbody-parties"); if (!tbody) return;
   tbody.innerHTML = "";
@@ -300,7 +290,7 @@ function matSummary(p){
   return `${req}${brk?` • quebrados: ${brk}`:""}`;
 }
 
-/* ---------- Nova/Editar ---------- */
+/* Nova/Editar */
 function fillHallSelects(){
   $$('select[name="hall"]').forEach(sel=>{
     const hasAll = sel.querySelector('option[value=""]')!==null;
@@ -372,7 +362,7 @@ async function savePartyFromForm(){
   }catch{ err("Não foi possível salvar."); }
 }
 
-/* ---------- Finalizar ---------- */
+/* Finalizar */
 let currentFinalizeId = null;
 
 function openFinalize(p){
@@ -427,9 +417,25 @@ async function saveFinalizeFromForm(){
   }catch{ err("Não foi possível salvar a finalização."); }
 }
 
-/* ---------- Ver & Convidados ---------- */
+/* Ver & Convidados */
 function openView(p){
   const el = $("#view-content"); if (!el) return;
   const guests = (p.guests||[]).map(g=>`<span class="chip">${esc(g)}</span>`).join(" ");
   const notes = p.occurrence_notes ? esc(p.occurrence_notes) : "—";
-  const brk = (p.broken_cup
+  const brk = (p.broken_cups||0)+(p.broken_plates||0)+(p.broken_forks||0)+(p.broken_knives||0)+(p.broken_spoons||0);
+  el.innerHTML = `
+    <div class="party-card card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <strong>${p.date} • ${esc(p.hall||"")}</strong>
+        <span class="badge ${p.status==="ok"?"ok":p.status==="occurrence"?"warn":""}">
+          ${p.status ? (p.status==="ok"?"OK":"Ocorrência") : "Sem status"}
+        </span>
+      </div>
+      <div class="muted tiny">Início: ${p.start_time||"-"} • Término: ${p.end_time||"-"}</div>
+      <div class="muted tiny">Materiais: ${matSummary(p)}</div>
+      <div class="muted tiny">Convidados: ${guests||"<em>—</em>"}</div>
+      <div class="muted tiny">Notas: ${notes}</div>
+      <div class="muted tiny">Quebrados: ${brk || "—"}</div>
+    </div>
+  `;
+  $("
