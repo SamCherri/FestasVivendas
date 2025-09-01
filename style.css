@@ -1,11 +1,98 @@
+:root{
+  --bg:#071521;
+  --panel:#0e2133;
+  --ink:#e6f1ff;
+  --muted:#9fb7d1;
+  --brand:#0B74B8;
+  --ok:#159f6d;
+  --warn:#d8893a;
+  --err:#d44b4b;
+  --line:#2a3a4c;
+  --radius:14px;
+  --shadow:0 6px 18px rgba(0,0,0,.25)
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background:var(--bg); color:var(--ink);
+}
+
+a{color:var(--brand); text-decoration:none}
+a:hover{text-decoration:underline}
+
+.container{max-width:940px;margin:24px auto;padding:0 16px}
+.topbar{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:14px 16px; border-bottom:1px solid var(--line); background:#081928; position:sticky; top:0; z-index:10
+}
+h1{font-size:20px;margin:0}
+.nav a{margin-left:14px;color:#cfe3ff}
+.nav a[aria-current="page"]{font-weight:600}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; margin:16px 0; box-shadow:var(--shadow)
+}
+.row{display:flex; align-items:center}
+.row.gap{gap:10px}
+.row.right{justify-content:flex-end}
+
+.btn{
+  appearance:none; border:1px solid var(--brand); background:var(--brand);
+  color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer
+}
+.btn.ghost{background:transparent; color:var(--brand)}
+.btn:disabled{opacity:.6; cursor:not-allowed}
+
+.muted{color:var(--muted)}
+.tiny{font-size:13px}
+
+/* --------- Tabela --------- */
+.table-wrapper { overflow: visible; max-height: none; }  /* removido !important */
+.table{
+  width:100%; border-collapse:collapse; border:1px solid var(--line); border-radius:10px; overflow:hidden
+}
+.table th,.table td{ padding:10px 12px; border-bottom:1px solid var(--line)}
+.table th{text-align:left; color:#cfe3ff; background:#0b1f31}
+.table tr:last-child td{border-bottom:none}
+.status{display:inline-block; padding:3px 8px; border-radius:999px; font-size:13px}
+.status.ok{background:rgba(21,159,109,.15); color:#b6ffd7; border:1px solid #1e8e63}
+.status.warn{background:rgba(216,137,58,.15); color:#ffe0b6; border:1px solid #b07734}
+.status.wait{background:rgba(11,116,184,.15); color:#cfe3ff; border:1px solid #0B74B8}
+
+/* Badges/Chips */
+.badge{background:#0B74B8;color:#fff;border-radius:999px;padding:3px 7px}
+.badge.ok{background:#159f6d}
+.badge.warn{background:#d8893a}
+.chip{display:inline-block;background:#0e2133;border:1px solid var(--line);border-radius:999px;padding:3px 7px;margin:4px 6px 0 0;color:#cfe3ff}
+
+/* Mensagens */
+.toast{
+  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  background:#0e2133;border:1px solid var(--line);padding:10px 14px;border-radius:999px;z-index:9
+}
+.errbox{
+  position:fixed;left:50%;bottom:76px;transform:translateX(-50%);
+  background:#2a0f14;border:1px solid #7d2b31;padding:10px 14px;border-radius:10px;z-index:9
+}
+.footer{opacity:.7;text-align:center;margin:14px 0}
+
+/* utilitário para margin-top específica usada no index */
+.mt-8px { margin-top: 8px; }
+
+/* --------- (Opcional) Modo para liberar overflow só onde precisar --------- */
+/* Use no HTML um wrapper <div class="table-unclipped">... */
+.table-unclipped .table-wrapper { overflow: visible; max-height: none; }
+
 /* =========================================
    TYPOGRAPHY + MOBILE TOUCH (ROTA A: system-ui)
    - organiza fontes, tamanhos e utilitários
    - melhora legibilidade e alvos de toque
    - não requer alterar HTML
    ========================================= */
-
-/* pilha nativa rápida (sem downloads) */
 :root{
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -40,14 +127,14 @@ body{
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* hierarquia (funciona mesmo se seu HTML já tiver h1..h4) */
+/* hierarquia de títulos e parágrafos */
 h1, .h1 { font-size: var(--fs-3xl); line-height: var(--lh-tight); letter-spacing: var(--track-tight); margin: 0 0 8px; }
 h2, .h2 { font-size: var(--fs-2xl); line-height: var(--lh-tight); letter-spacing: var(--track-tight); margin: 16px 0 8px; }
 h3, .h3 { font-size: var(--fs-xl);  line-height: var(--lh-tight); margin: 16px 0 6px; }
 h4, .h4 { font-size: var(--fs-lg);  line-height: var(--lh-tight); margin: 12px 0 6px; }
 p, .p   { font-size: var(--fs-md);  margin: 8px 0; }
 
-.small, .tiny { font-size: var(--fs-sm); } /* mantém suas classes atuais */
+.small, .tiny { font-size: var(--fs-sm); }
 .muted { color: var(--muted); }
 
 /* marca do condomínio mais visível no topo */
@@ -97,23 +184,14 @@ input, select, textarea, label { font-size: var(--fs-md); line-height: 1.4; }
 /* FAB (botão flutuante +) mais fácil de tocar */
 .fab{ width:56px; height:56px; font-size:28px; }
 
-/* utilitários tipográficos (uso opcional) */
-.text-xs { font-size: var(--fs-xs); }
-.text-sm { font-size: var(--fs-sm); }
-.text-md { font-size: var(--fs-md); }
-.text-lg { font-size: var(--fs-lg); }
-.text-xl { font-size: var(--fs-xl); }
-.text-2xl{ font-size: var(--fs-2xl); }
-.text-3xl{ font-size: var(--fs-3xl); }
-.leading-tight   { line-height: var(--lh-tight); }
-.leading-normal  { line-height: var(--lh-normal); }
-.leading-relaxed { line-height: var(--lh-relaxed); }
-.tracking-tight  { letter-spacing: var(--track-tight); }
-.tracking-normal { letter-spacing: var(--track-normal); }
-.tracking-wide   { letter-spacing: var(--track-wide); }
+/* utilitários tipográficos (opcionais) */
+.text-xs{font-size:var(--fs-xs)} .text-sm{font-size:var(--fs-sm)} .text-md{font-size:var(--fs-md)}
+.text-lg{font-size:var(--fs-lg)} .text-xl{font-size:var(--fs-xl)} .text-2xl{font-size:var(--fs-2xl)} .text-3xl{font-size:var(--fs-3xl)}
+.leading-tight{line-height:var(--lh-tight)} .leading-normal{line-height:var(--lh-normal)} .leading-relaxed{line-height:var(--lh-relaxed)}
+.tracking-tight{letter-spacing:var(--track-tight)} .tracking-normal{letter-spacing:var(--track-normal)} .tracking-wide{letter-spacing:var(--track-wide)}
 .weight-400{font-weight:400} .weight-500{font-weight:500} .weight-600{font-weight:600} .weight-700{font-weight:700}
 
-/* mobile pequeno: sobe a base ~18px mantendo acessibilidade */
+/* mobile pequeno: base ~18px mantendo acessibilidade */
 @media (max-width: 480px){
   html{ font-size: 112.5%; }
   .topbar{ padding: 16px; }
