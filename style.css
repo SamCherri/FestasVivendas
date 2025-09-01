@@ -1,9 +1,7 @@
 /* ==========================================================
    VIVENDAS — UI MOBILE-FIRST (look de app)
-   Paleta, tipografia e componentes básicos
    ========================================================== */
 :root{
-  /* Cores */
   --bg:#08131d;
   --bg-elev:#0f2031;
   --ink:#e8f2ff;
@@ -20,10 +18,8 @@
   --shadow:0 8px 24px rgba(0,0,0,.35);
   --radius:16px;
 
-  /* Tipografia (rota A: system-ui) */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
 
-  /* Escala fluida */
   --fs-xs:  clamp(12px, 2.8vw, 13px);
   --fs-sm:  clamp(13px, 3.2vw, 14px);
   --fs-md:  clamp(15px, 3.6vw, 16px);
@@ -34,7 +30,6 @@
 
   --lh-tight:1.25; --lh:1.55; --lh-loose:1.75;
 
-  /* Tamanho mínimo de toque */
   --touch:44px;
 }
 
@@ -51,26 +46,26 @@ a{color:var(--brand); text-decoration:none}
 a:hover{text-decoration:underline}
 img{max-width:100%; height:auto; display:block}
 
-/* ===== AppBar (topo “cara de app”) ===== */
+/* ===== AppBar (título central real) ===== */
 .topbar{
   position:sticky; top:0; z-index:20;
-  display:flex; align-items:center; gap:12px;
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center;
   height:56px; padding:0 14px;
   background:linear-gradient(180deg,#0b1f33 0%, #0b1c2d 100%);
   border-bottom:1px solid rgba(255,255,255,.06);
   box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
-.topbar .brand{display:flex; align-items:center; gap:10px; margin-left:auto}
-.topbar .brand span{font-weight:700; font-size:var(--fs-xl); letter-spacing:-.01em; color:#eaf3ff}
 .btn.icon{font-size:22px; padding:8px 10px; border:none; background:transparent; color:#cfe3ff}
+.topbar .brand{display:flex; align-items:center; gap:10px; justify-self:center; text-align:center}
+.topbar .brand span{font-weight:700; font-size:var(--fs-xl); letter-spacing:-.01em; color:#eaf3ff}
 
 /* ===== Layout ===== */
-.container{max-width:960px; margin:0 auto; padding:14px 14px 24px}
+.container{max-width:960px; margin:0 auto; padding:12px 12px 24px}
 
 /* ===== Cards ===== */
 .card{
   background:var(--bg-elev); border:1px solid var(--line);
-  border-radius:var(--radius); padding:16px; box-shadow:var(--shadow);
+  border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)
 }
 .center-v{display:grid; min-height:65vh; place-items:center}
 .footer{opacity:.7; text-align:center; margin:16px 0}
@@ -106,9 +101,9 @@ img{max-width:100%; height:auto; display:block}
   background:#2a0f14; border:1px solid #7d2b31; padding:10px 14px; border-radius:12px; z-index:50
 }
 
-/* ===== Métricas (cards) ===== */
+/* ===== Métricas (agora 2 colunas no mobile) ===== */
 .metrics{
-  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:8px 0 16px;
+  display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0 16px;
 }
 .metric{
   background:linear-gradient(180deg,#0e2133, #0c1d2c);
@@ -118,7 +113,7 @@ img{max-width:100%; height:auto; display:block}
 .metric .k{font-size:var(--fs-sm); color:var(--ink-2); opacity:.85}
 .metric .v{font-size:var(--fs-2xl); font-weight:800; letter-spacing:-.01em; margin-top:2px}
 
-/* ===== Drawer lateral + backdrop ===== */
+/* ===== Drawer + backdrop ===== */
 .drawer{
   position:fixed; inset:0 auto 0 0; width:82%; max-width:320px;
   background:#0b1f33; border-right:1px solid var(--line);
@@ -176,7 +171,6 @@ h3{font-size:var(--fs-xl);  line-height:var(--lh-tight); margin:12px 0 6px}
 .cal-title{font-size:var(--fs-xl); font-weight:700; text-align:center; color:#eaf3ff; letter-spacing:-.01em}
 .cal-header .btn{padding:8px 10px; min-width:0; min-height:0; border-radius:12px}
 
-/* grade */
 #cal-grid{
   display:grid !important;
   grid-template-columns:repeat(7, minmax(0,1fr)) !important;
@@ -186,50 +180,45 @@ h3{font-size:var(--fs-xl);  line-height:var(--lh-tight); margin:12px 0 6px}
 }
 #cal-grid .cal-cell{position:relative; display:block; width:100%}
 
-/* botão do dia */
 #cal-grid .cal-hit{
   display:grid; place-items:center; box-sizing:border-box;
   width:100% !important; min-width:0 !important; padding:0 !important;
-  font-size:1rem; font-weight:600; color:#d9e8ff;
+  font-size:1.05rem; font-weight:600; color:#d9e8ff;
   border:none; border-radius:14px;
-  background:#0f2234; /* leve elevação */
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+  background:#0f2234;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
   min-height:44px; cursor:pointer;
   transition:filter .12s ease, transform .05s ease;
 }
 #cal-grid .cal-hit:hover{filter:brightness(1.05)}
 #cal-grid .cal-hit:active{transform:translateY(1px)}
 
-/* quadrado quando suportado */
 @supports (aspect-ratio: 1 / 1){
   #cal-grid .cal-hit{aspect-ratio:1/1; min-height:0}
 }
 
-/* hoje / fora do mês */
 #cal-grid .cal-today .cal-hit{
+  background:#12304a;
   outline:2px solid rgba(11,116,184,.65); outline-offset:-2px;
 }
 #cal-grid .cal-out .cal-hit{opacity:.55}
 
-/* “bolinha verde” (já vem no JS, reforço aqui) */
 #cal-grid .cal-dot{
   position:absolute; right:8px; bottom:8px;
   width:9px; height:9px; border-radius:50%;
   background:var(--ok); box-shadow:0 0 0 3px rgba(24,192,122,.14)
 }
 
-/* legenda do calendário */
 .calendar .tiny{margin-top:8px; color:var(--ink-2)}
 
 /* ==========================================================
    RESPONSIVO
    ========================================================== */
 @media (max-width: 480px){
-  html{font-size:112.5%} /* ~18px base */
-  .container{padding:12px 12px 24px}
-  .metrics{grid-template-columns:repeat(3,1fr); gap:8px}
+  html{font-size:112.5%}
+  .container{padding:10px 10px 20px}
   #cal-grid{gap:6px !important}
-  #cal-grid .cal-hit{font-size:.95rem; min-height:40px}
+  #cal-grid .cal-hit{font-size:.98rem; min-height:40px}
 }
 
 /* tablets/desktop pequenos */
@@ -238,9 +227,7 @@ h3{font-size:var(--fs-xl);  line-height:var(--lh-tight); margin:12px 0 6px}
   .metrics{grid-template-columns:repeat(3,1fr)}
 }
 
-/* ==========================================================
-   AJUSTES FINOS / UTILITÁRIOS
-   ========================================================== */
+/* ===== Util ===== */
 .hidden{display:none !important}
 .mt-8px{margin-top:8px}
 .table-unclipped .table-wrapper{overflow:visible; max-height:none}
