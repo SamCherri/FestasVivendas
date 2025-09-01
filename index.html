@@ -5,44 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vivendas de La Salle — Festas</title>
   <meta name="description" content="Agenda interna de festas do condomínio Vivendas de La Salle. Acesso restrito." />
-
-  <!-- Favicon/Manifest -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="manifest" href="manifest.webmanifest" />
-
-  <!-- Theme color por esquema -->
-  <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#0B74B8" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#08131d" media="(prefers-color-scheme: dark)">
-
-  <!-- iOS PWA -->
+  <meta name="theme-color" content="#0B74B8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-
-  <!-- CSS -->
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Evita FOUC de elementos escondidos -->
   <style>[hidden]{display:none!important}</style>
-
-  <!-- App -->
   <script type="module" src="config.js"></script>
   <script type="module" src="app.js"></script>
 </head>
 <body>
-  <!-- Skip link para acessibilidade -->
-  <a href="#sec-calendar" class="skip-link">Pular para conteúdo</a>
-
   <!-- Topo -->
   <header class="topbar">
-    <button id="btn-menu" class="btn ghost icon" aria-label="Menu">☰</button>
+    <button id="btn-menu" class="btn icon ghost" aria-label="Menu">☰</button>
     <div class="brand">
       <img src="favicon.svg" alt="" width="24" height="24" />
       <span>Vivendas de La Salle — Festas</span>
     </div>
+    <div aria-hidden="true" style="width:28px;"></div>
   </header>
 
   <!-- Menu lateral -->
-  <aside id="drawer" class="drawer" hidden aria-label="Menu lateral">
+  <aside id="drawer" class="drawer" hidden>
     <div class="drawer-head">
       <strong>Menu</strong>
       <button id="btn-close-drawer" class="btn link">Fechar</button>
@@ -52,7 +36,7 @@
       <button class="drawer-item" data-go="list">📋 Festas</button>
       <hr/>
       <button class="drawer-item" id="m-new">➕ Nova Festa</button>
-      <!-- (notificações removidas a pedido) -->
+      <button class="drawer-item" id="m-notify">🔔 Ativar lembretes</button>
       <button class="drawer-item" id="m-logout">🚪 Sair</button>
     </nav>
   </aside>
@@ -86,9 +70,9 @@
 
         <section class="card calendar">
           <header class="cal-header">
-            <button id="cal-prev" class="btn" aria-label="Mês anterior">◀</button>
-            <div id="cal-title" class="cal-title" aria-live="polite">Mês Ano</div>
-            <button id="cal-next" class="btn" aria-label="Próximo mês">▶</button>
+            <button id="cal-prev" class="btn">◀</button>
+            <div id="cal-title" class="cal-title">Mês Ano</div>
+            <button id="cal-next" class="btn">▶</button>
           </header>
           <div id="cal-grid" class="cal-grid"></div>
           <p class="tiny muted mt-8px">
@@ -100,7 +84,7 @@
       <!-- LISTA DE FESTAS -->
       <section id="sec-list" hidden>
         <form id="filters" class="filters card">
-          <label>Data <input type="date" name="date" autocomplete="off"></label>
+          <label>Data <input type="date" name="date"></label>
           <label>Salão <select name="hall"><option value="">Todos</option></select></label>
           <button type="submit" class="btn">Filtrar</button>
           <button type="button" id="btn-clear-filters" class="btn link">Limpar</button>
@@ -124,16 +108,14 @@
     <dialog id="party-dialog"></dialog>
     <dialog id="finalize-dialog"></dialog>
 
-    <dialog id="view-dialog" aria-label="Detalhes da festa">
+    <dialog id="view-dialog">
       <div id="view-content"></div>
       <menu><button id="btn-close-view" class="btn">Fechar</button></menu>
     </dialog>
 
-    <button id="fab-new" class="fab" hidden aria-label="Nova festa">＋</button>
-
-    <!-- aria-live para mensagens -->
-    <div id="toast" class="toast" hidden aria-live="polite"></div>
-    <div id="errbox" class="errbox" hidden aria-live="assertive" role="alert"></div>
+    <button id="fab-new" class="fab" hidden>＋</button>
+    <div id="toast" class="toast" hidden></div>
+    <div id="errbox" class="errbox" hidden></div>
   </main>
 
   <footer class="footer"><small>Uso interno — Firestore (sem anexos). App instalável.</small></footer>
