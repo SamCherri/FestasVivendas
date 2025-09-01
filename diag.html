@@ -1,31 +1,60 @@
-<!doctype html><meta charset="utf-8">
-<title>Diag Firebase</title>
-<script type="module">
-import { CONFIG } from './config.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diag Firebase</title>
+  <style>
+    body{font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;background:#0b1420;color:#e6f0ff;margin:0;padding:16px}
+    pre{background:#0e2133;border:1px solid #2a3a4c;border-radius:10px;padding:10px 12px;white-space:pre-wrap}
+    .ok{color:#9ff0c5} .warn{color:#ffd48a} .err{color:#ff9c9c}
+  </style>
+</head>
+<body>
+  <h1>Diagnóstico Firebase</h1>
+  <p>Testa app, Auth e Firestore usando <code>config.js</code> do app.</p>
+  <div id="out"></div>
 
-const log = m => { const p=document.createElement('pre'); p.textContent = m; document.body.appendChild(p); }
+  <script type="module">
+    import { firebaseConfig } from "./config.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-try{
-  log('Inicializando…');
-  const app = initializeApp(CONFIG.firebaseConfig);
-  log('App OK: '+app.name);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const out = document.getElementById("out");
+    const log = (msg, cls="") => {
+      const p=document.createElement("pre");
+      if(cls) p.className = cls;
+      p.textContent = msg;
+      out.appendChild(p);
+    };
 
-  log('Tentando listar /festas…');
-  const snap = await getDocs(collection(db,'festas'));
-  log('Firestore OK. Docs: '+snap.size);
+    try{
+      log("Inicializando app…");
+      const app = initializeApp(firebaseConfig);
+      log("App OK: " + app.name, "ok");
 
-  log('Teste login (se quiser): edite email/senha abaixo e recarregue:');
-  const EMAIL = ""; const PASS = "";
-  if(EMAIL && PASS){
-    await signInWithEmailAndPassword(auth, EMAIL, PASS);
-    log('Auth OK: '+auth.currentUser.email);
-  } else {
-    log('(Pulando teste de login)');
-  }
-}catch(e){ log('ERRO: '+(e.code||e.message)); console.error(e); }
-</script>
+      const auth = getAuth(app);
+      const db   = getFirestore(app);
+
+      log("Tentando listar coleção 'parties'…");
+      const snap = await getDocs(collection(db, "parties"));
+      log(`Firestore OK. Docs: ${snap.size}`, "ok");
+
+      log("Teste de login (opcional): edite EMAIL/PASS abaixo e recarregue.", "warn");
+      const EMAIL = ""; // ex: "usuario@vivendas.com"
+      const PASS  = "";
+      if (EMAIL && PASS){
+        await signInWithEmailAndPassword(auth, EMAIL, PASS);
+        log("Auth OK: " + auth.currentUser.email, "ok");
+      } else {
+        log("(Pulando teste de login)", "warn");
+      }
+    }catch(e){
+      const code = e?.code || e?.message || String(e);
+      log("ERRO: " + code, "err");
+      console.error(e);
+    }
+  </script>
+</body>
+</html>
