@@ -153,40 +153,71 @@ p,  .p  { font-size: var(--fs-md);  margin: 8px 0; }
 .table-unclipped .table-wrapper { overflow: visible; max-height: none; }
 
 /* =========================
-   Calendário (grade + hotfix)
+   Calendário (grade + hotfix) — compatível com app.js
    ========================= */
-/* Cabeçalho do calendário: setas não herdam botões grandes */
+
+/* Cabeçalho do calendário: setas compactas */
 .cal-header .btn{
   padding:8px 10px !important;
-  min-width:0 !important; min-height:0 !important;
+  min-width:0 !important;
+  min-height:0 !important;
 }
 
-/* Força 7 colunas e neutraliza heranças dentro da grade */
+/* Grade: 7 colunas fixas */
 #cal-grid{
   display:grid !important;
   grid-template-columns:repeat(7, minmax(0,1fr)) !important;
   gap:6px !important;
   width:100% !important;
 }
-#cal-grid > .cell,
-#cal-grid > button,
-#cal-grid > [role="button"]{
-  min-width:0 !important;        /* cancela min-width global dos .btn */
-  width:100% !important;
-  padding:0 !important;          /* evita “pílula” comprida */
-  border-radius:10px;
-  display:grid; place-items:center;
-  font-size:1rem;
-  min-height:44px;               /* alvo confortável */
+
+/* Cada célula comporta o botão e precisa ser o referencial da bolinha */
+#cal-grid .cal-cell{
+  position: relative;
+  display:block;
+  width:100%;
 }
+
+/* Botão de dia — neutraliza qualquer herança global, ocupa toda a célula */
+#cal-grid .cal-hit{
+  box-sizing:border-box;
+  display:grid;
+  place-items:center;
+
+  width:100% !important;
+  min-width:0 !important;   /* evita estourar a grade */
+  padding:0 !important;     /* sem pílula */
+
+  font-size:1rem;
+  min-height:44px;          /* alvo de toque confortável */
+
+  border:none;
+  border-radius:10px;
+  background:transparent;
+  color:inherit;
+  cursor:pointer;
+}
+
+/* Deixa o dia quadrado quando suportado */
 @supports (aspect-ratio: 1 / 1){
-  #cal-grid > .cell,
-  #cal-grid > button,
-  #cal-grid > [role="button"]{
+  #cal-grid .cal-hit{
     aspect-ratio:1/1;
     min-height:0;
   }
 }
+
+/* Bolinha verde já vem como .cal-dot no app.js; reforço de posição */
+#cal-grid .cal-dot{
+  position:absolute;
+  right:8px; bottom:8px;
+  width:9px; height:9px; border-radius:50%;
+  background:#19d38a;
+  box-shadow:0 0 0 3px rgba(24,192,122,.14);
+}
+
+/* Hoje e fora do mês (se quiser destacar) */
+#cal-grid .cal-today .cal-hit{ outline:2px solid rgba(11,116,184,.6); outline-offset:-2px; }
+#cal-grid .cal-out .cal-hit{ opacity:.55; }
 
 /* =========================
    Responsivo
@@ -196,11 +227,19 @@ p,  .p  { font-size: var(--fs-md);  margin: 8px 0; }
   .topbar{ padding:16px; }
   .btn{ padding:14px 18px; }
   .nav a{ padding:12px 10px; }
+
   #cal-grid{ gap:4px !important; }
-  #cal-grid > .cell,
-  #cal-grid > button,
-  #cal-grid > [role="button"]{
+  #cal-grid .cal-hit{
     font-size:0.95rem;
     min-height:40px;
   }
+}
+
+/* (Opcional) Botões de ação na tabela: versão compacta */
+.table .btn.tiny{
+  min-height:auto;
+  min-width:auto;
+  padding:8px 10px;
+  font-size: var(--fs-sm);
+  border-radius:10px;
 }
