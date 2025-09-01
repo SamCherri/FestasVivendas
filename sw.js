@@ -1,4 +1,5 @@
-const CACHE = "festas-v8"; // mude o sufixo sempre que alterar CSS/JS/HTML
+// sw.js
+const CACHE = "festas-v12"; // ↑ suba a versão quando publicar mudanças
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,12 +7,11 @@ const ASSETS = [
   "./app.js",
   "./config.js",
   "./manifest.webmanifest",
-  "./favicon.svg",
-  "./diag.html" // opcional: remova se não quiser offline
+  "./favicon.svg"
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
   self.skipWaiting();
 });
 
@@ -27,33 +27,44 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // Só GET e mesma origem (evita reqs externas/POST irem pro cache)
-  if (req.method !== "GET" || new URL(req.url).origin !== location.origin) {
-    return;
-  }
+  // só GET do mesmo domínio
+  if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
 
-  // Navegação → fallback para index.html
+  // Navegação: tenta rede, cai no index.html
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-          return res;
-        })
-        .catch(() => caches.match("./index.html"))
+        .then((res)=>{ caches.open(CACHE).then((c)=>c.put(req,res.clone())); return res; })
+        .catch(()=> caches.match("./index.html"))
     );
     return;
   }
 
-  // Network-first para assets
+  // Demais assets: network first com fallback ao cache
   event.respondWith(
     fetch(req)
-      .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy));
-        return res;
-      })
-      .catch(() => caches.match(req))
+      .then((res)=>{ caches.open(CACHE).then((c)=>c.put(req,res.clone())); return res; })
+      .catch(()=> caches.match(req))
   );
 });
+
+// Permite que a página peça para aplicar atualização imediatamente
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
+});
+
+// (Opcional) Clique em notificações (se voltar a usar no futuro)
+/*
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      const allClients = await clients.matchAll({ includeUncontrolled: true, type: "window" });
+      for (const c of allClients) {
+        if (c.url.includes("./index.html")) { c.focus(); return; }
+      }
+      clients.openWindow("./");
+    })()
+  );
+});
+*/
