@@ -1,245 +1,246 @@
-/* =========================
-   BASE: Cores, fontes, escala
-   ========================= */
+/* ==========================================================
+   VIVENDAS — UI MOBILE-FIRST (look de app)
+   Paleta, tipografia e componentes básicos
+   ========================================================== */
 :root{
-  /* Cores & estrutura */
-  --bg:#071521;
-  --panel:#0e2133;
-  --ink:#e6f1ff;
+  /* Cores */
+  --bg:#08131d;
+  --bg-elev:#0f2031;
+  --ink:#e8f2ff;
+  --ink-2:#c8daef;
   --muted:#9fb7d1;
-  --brand:#0B74B8;
-  --ok:#159f6d;
-  --warn:#d8893a;
-  --err:#d44b4b;
-  --line:#2a3a4c;
-  --radius:14px;
-  --shadow:0 6px 18px rgba(0,0,0,.25);
+  --line:#294057;
 
-  /* Tipografia (ROTA A – system-ui) */
+  --brand:#0B74B8;
+  --brand-2:#0a89d9;
+  --ok:#19d38a;
+  --warn:#ffb851;
+  --danger:#e45c5c;
+
+  --shadow:0 8px 24px rgba(0,0,0,.35);
+  --radius:16px;
+
+  /* Tipografia (rota A: system-ui) */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Escala fluida */
-  --fs-xs:  clamp(12px,  2.8vw, 13px);
-  --fs-sm:  clamp(13px,  3.2vw, 14px);
-  --fs-md:  clamp(15px,  3.6vw, 16px); /* corpo */
-  --fs-lg:  clamp(17px,  4.2vw, 18px); /* botões/labels */
-  --fs-xl:  clamp(19px,  4.8vw, 22px); /* subtítulos */
-  --fs-2xl: clamp(22px,  5.6vw, 26px); /* títulos de seção */
-  --fs-3xl: clamp(26px,  6.8vw, 32px); /* título principal */
+  --fs-xs:  clamp(12px, 2.8vw, 13px);
+  --fs-sm:  clamp(13px, 3.2vw, 14px);
+  --fs-md:  clamp(15px, 3.6vw, 16px);
+  --fs-lg:  clamp(17px, 4.2vw, 18px);
+  --fs-xl:  clamp(19px, 4.8vw, 22px);
+  --fs-2xl: clamp(22px, 5.6vw, 26px);
+  --fs-3xl: clamp(26px, 6.8vw, 32px);
 
-  --lh-tight:   1.25;
-  --lh-normal:  1.55;
-  --lh-relaxed: 1.7;
+  --lh-tight:1.25; --lh:1.55; --lh-loose:1.75;
 
-  --track-tight:  -0.01em;
-  --track-normal:  0;
-  --track-wide:    0.02em;
-
-  /* Alvo mínimo de toque */
-  --touch: 44px;
+  /* Tamanho mínimo de toque */
+  --touch:44px;
 }
 
-/* =========================
-   Reset/estrutura
-   ========================= */
+/* ===== Reset / Base ===== */
 *{box-sizing:border-box}
 html,body{height:100%}
+html{scroll-behavior:smooth}
 body{
-  margin:0;
-  font-family: var(--font-sans);
-  font-size: var(--fs-md);
-  line-height: var(--lh-normal);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background:var(--bg);
-  color:var(--ink);
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--font-sans); font-size:var(--fs-md); line-height:var(--lh);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
 }
-
 a{color:var(--brand); text-decoration:none}
 a:hover{text-decoration:underline}
+img{max-width:100%; height:auto; display:block}
 
-.container{max-width:940px;margin:24px auto;padding:0 16px}
-
-/* =========================
-   Topbar / Navegação
-   ========================= */
+/* ===== AppBar (topo “cara de app”) ===== */
 .topbar{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:14px 16px; border-bottom:1px solid var(--line); background:#081928; position:sticky; top:0; z-index:10
+  position:sticky; top:0; z-index:20;
+  display:flex; align-items:center; gap:12px;
+  height:56px; padding:0 14px;
+  background:linear-gradient(180deg,#0b1f33 0%, #0b1c2d 100%);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
-.nav a{margin-left:14px;color:#cfe3ff}
-.nav a[aria-current="page"]{font-weight:600}
+.topbar .brand{display:flex; align-items:center; gap:10px; margin-left:auto}
+.topbar .brand span{font-weight:700; font-size:var(--fs-xl); letter-spacing:-.01em; color:#eaf3ff}
+.btn.icon{font-size:22px; padding:8px 10px; border:none; background:transparent; color:#cfe3ff}
 
-/* marca do condomínio mais visível */
-.topbar .brand span{
-  font-weight:700;
-  font-size:var(--fs-xl);
-  letter-spacing:var(--track-tight);
-}
+/* ===== Layout ===== */
+.container{max-width:960px; margin:0 auto; padding:14px 14px 24px}
 
-/* =========================
-   Cartões, linhas, botões
-   ========================= */
+/* ===== Cards ===== */
 .card{
-  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-  padding:16px; margin:16px 0; box-shadow:var(--shadow)
+  background:var(--bg-elev); border:1px solid var(--line);
+  border-radius:var(--radius); padding:16px; box-shadow:var(--shadow);
 }
-.row{display:flex; align-items:center}
-.row.gap{gap:10px}
-.row.right{justify-content:flex-end}
+.center-v{display:grid; min-height:65vh; place-items:center}
+.footer{opacity:.7; text-align:center; margin:16px 0}
 
+/* ===== Botões ===== */
 .btn{
-  appearance:none; border:1px solid var(--brand); background:var(--brand);
-  color:#fff; padding:12px 16px; border-radius:12px; cursor:pointer;
-  min-height: var(--touch); min-width: var(--touch);
-  font-size: var(--fs-lg);
+  appearance:none; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:var(--touch); min-width:var(--touch);
+  padding:12px 18px; border-radius:14px;
+  font-size:var(--fs-lg); font-weight:600; letter-spacing:.01em;
+  border:1px solid transparent; background:var(--brand); color:#fff;
+  box-shadow:0 6px 14px rgba(11,116,184,.28);
 }
-.btn.ghost{background:transparent; color:var(--brand)}
-.btn:disabled{opacity:.6; cursor:not-allowed}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent; color:var(--brand); border-color:var(--brand)}
+.btn.link{background:transparent; color:var(--brand); border:none; padding:10px 8px; min-height:auto}
+.btn.danger{background:#c94949}
+.btn.tiny{padding:8px 10px; min-height:auto; min-width:auto; font-size:var(--fs-sm); border-radius:10px}
 
-/* =========================
-   Tipografia auxiliar
-   ========================= */
-.muted{color:var(--muted)}
-.tiny, .small{font-size:var(--fs-sm)}
-h1, .h1 { font-size: var(--fs-3xl); line-height: var(--lh-tight); letter-spacing: var(--track-tight); margin: 0 0 8px; }
-h2, .h2 { font-size: var(--fs-2xl); line-height: var(--lh-tight); letter-spacing: var(--track-tight); margin: 16px 0 8px; }
-h3, .h3 { font-size: var(--fs-xl);  line-height: var(--lh-tight); margin: 16px 0 6px; }
-h4, .h4 { font-size: var(--fs-lg);  line-height: var(--lh-tight); margin: 12px 0 6px; }
-p,  .p  { font-size: var(--fs-md);  margin: 8px 0; }
-
-/* utilitário pedido (substitui style inline) */
-.mt-8px { margin-top: 8px; }
-
-/* utilitários tipográficos (opcional) */
-.text-xs{font-size:var(--fs-xs)} .text-sm{font-size:var(--fs-sm)} .text-md{font-size:var(--fs-md)}
-.text-lg{font-size:var(--fs-lg)} .text-xl{font-size:var(--fs-xl)} .text-2xl{font-size:var(--fs-2xl)} .text-3xl{font-size:var(--fs-3xl)}
-.leading-tight{line-height:var(--lh-tight)} .leading-normal{line-height:var(--lh-normal)} .leading-relaxed{line-height:var(--lh-relaxed)}
-.tracking-tight{letter-spacing:var(--track-tight)} .tracking-normal{letter-spacing:var(--track-normal)} .tracking-wide{letter-spacing:var(--track-wide)}
-.weight-400{font-weight:400} .weight-500{font-weight:500} .weight-600{font-weight:600} .weight-700{font-weight:700}
-
-/* =========================
-   Tabela / Badges / Mensagens
-   ========================= */
-.table-wrapper { overflow: visible; max-height: none; } /* (removido !important) */
-.table{
-  width:100%; border-collapse:collapse; border:1px solid var(--line); border-radius:10px; overflow:hidden
-}
-.table th,.table td{ padding:12px; border-bottom:1px solid var(--line)}
-.table th{text-align:left; color:#cfe3ff; background:#0b1f31}
-.table tr:last-child td{border-bottom:none}
-.status{display:inline-block; padding:3px 8px; border-radius:999px; font-size:13px}
-.status.ok{background:rgba(21,159,109,.15); color:#b6ffd7; border:1px solid #1e8e63}
-.status.warn{background:rgba(216,137,58,.15); color:#ffe0b6; border:1px solid #b07734}
-.status.wait{background:rgba(11,116,184,.15); color:#cfe3ff; border:1px solid #0B74B8}
-
-.badge{background:#0B74B8;color:#fff;border-radius:999px;padding:3px 7px}
-.badge.ok{background:#159f6d}
-.badge.warn{background:#d8893a}
-.chip{display:inline-block;background:#0e2133;border:1px solid var(--line);border-radius:999px;padding:3px 7px;margin:4px 6px 0 0;color:#cfe3ff}
+/* ===== Chips / Badges / Toast ===== */
+.badge{display:inline-block; padding:3px 8px; border-radius:999px; background:var(--brand); color:#fff}
+.badge.ok{background:var(--ok)} .badge.warn{background:var(--warn)}
+.chip{display:inline-block; background:#0e2133; border:1px solid var(--line); color:#cfe3ff; border-radius:999px; padding:4px 8px; margin:4px 6px 0 0}
 
 .toast{
-  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
-  background:#0e2133;border:1px solid var(--line);padding:10px 14px;border-radius:999px;z-index:9
+  position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+  background:#10263a; border:1px solid var(--line); padding:10px 14px; border-radius:12px; z-index:50
 }
 .errbox{
-  position:fixed;left:50%;bottom:76px;transform:translateX(-50%);
-  background:#2a0f14;border:1px solid #7d2b31;padding:10px 14px;border-radius:10px;z-index:9
-}
-.footer{opacity:.7;text-align:center;margin:14px 0}
-
-/* MODO opcional para liberar overflow só onde precisar */
-.table-unclipped .table-wrapper { overflow: visible; max-height: none; }
-
-/* =========================
-   Calendário (grade + hotfix) — compatível com app.js
-   ========================= */
-
-/* Cabeçalho do calendário: setas compactas */
-.cal-header .btn{
-  padding:8px 10px !important;
-  min-width:0 !important;
-  min-height:0 !important;
+  position:fixed; left:50%; bottom:72px; transform:translateX(-50%);
+  background:#2a0f14; border:1px solid #7d2b31; padding:10px 14px; border-radius:12px; z-index:50
 }
 
-/* Grade: 7 colunas fixas */
+/* ===== Métricas (cards) ===== */
+.metrics{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:8px 0 16px;
+}
+.metric{
+  background:linear-gradient(180deg,#0e2133, #0c1d2c);
+  border:1px solid var(--line); border-radius:14px; padding:12px;
+  box-shadow:var(--shadow);
+}
+.metric .k{font-size:var(--fs-sm); color:var(--ink-2); opacity:.85}
+.metric .v{font-size:var(--fs-2xl); font-weight:800; letter-spacing:-.01em; margin-top:2px}
+
+/* ===== Drawer lateral + backdrop ===== */
+.drawer{
+  position:fixed; inset:0 auto 0 0; width:82%; max-width:320px;
+  background:#0b1f33; border-right:1px solid var(--line);
+  transform:translateX(-100%); transition:transform .18s ease; z-index:40;
+  display:flex; flex-direction:column;
+}
+.drawer.open{transform:none}
+.drawer-head{display:flex; justify-content:space-between; align-items:center; padding:14px; border-bottom:1px solid var(--line)}
+.drawer-nav{padding:10px 8px; display:grid; gap:6px}
+.drawer-item{
+  background:#102339; color:#e6f1ff; border:1px solid var(--line);
+  border-radius:12px; padding:12px 12px; text-align:left;
+}
+.backdrop{position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:30}
+
+/* ===== Tabela (lista) ===== */
+.table-wrapper{overflow:auto; border-radius:14px}
+.table{width:100%; border-collapse:collapse; border:1px solid var(--line)}
+.table th,.table td{padding:12px; border-bottom:1px solid var(--line)}
+.table th{text-align:left; color:#cfe3ff; background:#0b1f31}
+.table tr:last-child td{border-bottom:none}
+
+/* ===== Formulários ===== */
+.form label{display:grid; gap:6px; margin-bottom:12px}
+.form input,.form select,.form textarea{
+  background:#0b1f33; color:#e6f1ff; border:1px solid var(--line);
+  border-radius:12px; min-height:42px; padding:10px 12px; font-size:var(--fs-md)
+}
+.form textarea{min-height:120px}
+menu{display:flex; gap:10px; justify-content:flex-end; padding:0; margin-top:8px}
+
+/* ===== FAB ===== */
+.fab{
+  position:fixed; right:16px; bottom:18px; z-index:25;
+  width:56px; height:56px; border-radius:999px;
+  background:linear-gradient(180deg,var(--brand-2),var(--brand));
+  color:#fff; font-size:28px; border:none; box-shadow:0 12px 28px rgba(11,116,184,.45)
+}
+
+/* ===== Tipografia auxiliar ===== */
+.muted{color:var(--muted)}
+.tiny{font-size:var(--fs-sm)}
+h1{font-size:var(--fs-3xl); line-height:var(--lh-tight); margin:0 0 8px}
+h2{font-size:var(--fs-2xl); line-height:var(--lh-tight); margin:16px 0 8px}
+h3{font-size:var(--fs-xl);  line-height:var(--lh-tight); margin:12px 0 6px}
+
+/* ==========================================================
+   CALENDÁRIO — 7 colunas, look de app
+   ========================================================== */
+.calendar{padding:12px}
+.cal-header{
+  display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center;
+  margin-bottom:10px;
+}
+.cal-title{font-size:var(--fs-xl); font-weight:700; text-align:center; color:#eaf3ff; letter-spacing:-.01em}
+.cal-header .btn{padding:8px 10px; min-width:0; min-height:0; border-radius:12px}
+
+/* grade */
 #cal-grid{
   display:grid !important;
   grid-template-columns:repeat(7, minmax(0,1fr)) !important;
-  gap:6px !important;
+  gap:8px !important;
   width:100% !important;
+  padding:6px 2px 2px;
 }
+#cal-grid .cal-cell{position:relative; display:block; width:100%}
 
-/* Cada célula comporta o botão e precisa ser o referencial da bolinha */
-#cal-grid .cal-cell{
-  position: relative;
-  display:block;
-  width:100%;
-}
-
-/* Botão de dia — neutraliza qualquer herança global, ocupa toda a célula */
+/* botão do dia */
 #cal-grid .cal-hit{
-  box-sizing:border-box;
-  display:grid;
-  place-items:center;
-
-  width:100% !important;
-  min-width:0 !important;   /* evita estourar a grade */
-  padding:0 !important;     /* sem pílula */
-
-  font-size:1rem;
-  min-height:44px;          /* alvo de toque confortável */
-
-  border:none;
-  border-radius:10px;
-  background:transparent;
-  color:inherit;
-  cursor:pointer;
+  display:grid; place-items:center; box-sizing:border-box;
+  width:100% !important; min-width:0 !important; padding:0 !important;
+  font-size:1rem; font-weight:600; color:#d9e8ff;
+  border:none; border-radius:14px;
+  background:#0f2234; /* leve elevação */
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+  min-height:44px; cursor:pointer;
+  transition:filter .12s ease, transform .05s ease;
 }
+#cal-grid .cal-hit:hover{filter:brightness(1.05)}
+#cal-grid .cal-hit:active{transform:translateY(1px)}
 
-/* Deixa o dia quadrado quando suportado */
+/* quadrado quando suportado */
 @supports (aspect-ratio: 1 / 1){
-  #cal-grid .cal-hit{
-    aspect-ratio:1/1;
-    min-height:0;
-  }
+  #cal-grid .cal-hit{aspect-ratio:1/1; min-height:0}
 }
 
-/* Bolinha verde já vem como .cal-dot no app.js; reforço de posição */
+/* hoje / fora do mês */
+#cal-grid .cal-today .cal-hit{
+  outline:2px solid rgba(11,116,184,.65); outline-offset:-2px;
+}
+#cal-grid .cal-out .cal-hit{opacity:.55}
+
+/* “bolinha verde” (já vem no JS, reforço aqui) */
 #cal-grid .cal-dot{
-  position:absolute;
-  right:8px; bottom:8px;
+  position:absolute; right:8px; bottom:8px;
   width:9px; height:9px; border-radius:50%;
-  background:#19d38a;
-  box-shadow:0 0 0 3px rgba(24,192,122,.14);
+  background:var(--ok); box-shadow:0 0 0 3px rgba(24,192,122,.14)
 }
 
-/* Hoje e fora do mês (se quiser destacar) */
-#cal-grid .cal-today .cal-hit{ outline:2px solid rgba(11,116,184,.6); outline-offset:-2px; }
-#cal-grid .cal-out .cal-hit{ opacity:.55; }
+/* legenda do calendário */
+.calendar .tiny{margin-top:8px; color:var(--ink-2)}
 
-/* =========================
-   Responsivo
-   ========================= */
+/* ==========================================================
+   RESPONSIVO
+   ========================================================== */
 @media (max-width: 480px){
-  html{ font-size:112.5%; }      /* ~18px base */
-  .topbar{ padding:16px; }
-  .btn{ padding:14px 18px; }
-  .nav a{ padding:12px 10px; }
-
-  #cal-grid{ gap:4px !important; }
-  #cal-grid .cal-hit{
-    font-size:0.95rem;
-    min-height:40px;
-  }
+  html{font-size:112.5%} /* ~18px base */
+  .container{padding:12px 12px 24px}
+  .metrics{grid-template-columns:repeat(3,1fr); gap:8px}
+  #cal-grid{gap:6px !important}
+  #cal-grid .cal-hit{font-size:.95rem; min-height:40px}
 }
 
-/* (Opcional) Botões de ação na tabela: versão compacta */
-.table .btn.tiny{
-  min-height:auto;
-  min-width:auto;
-  padding:8px 10px;
-  font-size: var(--fs-sm);
-  border-radius:10px;
+/* tablets/desktop pequenos */
+@media (min-width: 720px){
+  .container{padding:18px 18px 28px}
+  .metrics{grid-template-columns:repeat(3,1fr)}
 }
+
+/* ==========================================================
+   AJUSTES FINOS / UTILITÁRIOS
+   ========================================================== */
+.hidden{display:none !important}
+.mt-8px{margin-top:8px}
+.table-unclipped .table-wrapper{overflow:visible; max-height:none}
