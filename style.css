@@ -46,7 +46,7 @@ a{color:var(--brand); text-decoration:none}
 a:hover{text-decoration:underline}
 img{max-width:100%; height:auto; display:block}
 
-/* ===== AppBar (título central real) ===== */
+/* ===== AppBar ===== */
 .topbar{
   position:sticky; top:0; z-index:20;
   display:grid; grid-template-columns:auto 1fr auto; align-items:center;
@@ -63,10 +63,7 @@ img{max-width:100%; height:auto; display:block}
 .container{max-width:960px; margin:0 auto; padding:12px 12px 24px}
 
 /* ===== Cards ===== */
-.card{
-  background:var(--bg-elev); border:1px solid var(--line);
-  border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)
-}
+.card{background:var(--bg-elev); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
 .center-v{display:grid; min-height:65vh; place-items:center}
 .footer{opacity:.7; text-align:center; margin:16px 0}
 
@@ -91,45 +88,24 @@ img{max-width:100%; height:auto; display:block}
 .badge{display:inline-block; padding:3px 8px; border-radius:999px; background:var(--brand); color:#fff}
 .badge.ok{background:var(--ok)} .badge.warn{background:var(--warn)}
 .chip{display:inline-block; background:#0e2133; border:1px solid var(--line); color:#cfe3ff; border-radius:999px; padding:4px 8px; margin:4px 6px 0 0}
+.toast{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); background:#10263a; border:1px solid var(--line); padding:10px 14px; border-radius:12px; z-index:50}
+.errbox{position:fixed; left:50%; bottom:72px; transform:translateX(-50%); background:#2a0f14; border:1px solid #7d2b31; padding:10px 14px; border-radius:12px; z-index:50}
 
-.toast{
-  position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
-  background:#10263a; border:1px solid var(--line); padding:10px 14px; border-radius:12px; z-index:50
-}
-.errbox{
-  position:fixed; left:50%; bottom:72px; transform:translateX(-50%);
-  background:#2a0f14; border:1px solid #7d2b31; padding:10px 14px; border-radius:12px; z-index:50
-}
-
-/* ===== Métricas (agora 2 colunas no mobile) ===== */
-.metrics{
-  display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0 16px;
-}
-.metric{
-  background:linear-gradient(180deg,#0e2133, #0c1d2c);
-  border:1px solid var(--line); border-radius:14px; padding:12px;
-  box-shadow:var(--shadow);
-}
+/* ===== Métricas ===== */
+.metrics{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0 16px}
+.metric{background:linear-gradient(180deg,#0e2133, #0c1d2c); border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow:var(--shadow)}
 .metric .k{font-size:var(--fs-sm); color:var(--ink-2); opacity:.85}
 .metric .v{font-size:var(--fs-2xl); font-weight:800; letter-spacing:-.01em; margin-top:2px}
 
-/* ===== Drawer + backdrop ===== */
-.drawer{
-  position:fixed; inset:0 auto 0 0; width:82%; max-width:320px;
-  background:#0b1f33; border-right:1px solid var(--line);
-  transform:translateX(-100%); transition:transform .18s ease; z-index:40;
-  display:flex; flex-direction:column;
-}
+/* ===== Drawer ===== */
+.drawer{position:fixed; inset:0 auto 0 0; width:82%; max-width:320px; background:#0b1f33; border-right:1px solid var(--line); transform:translateX(-100%); transition:transform .18s ease; z-index:40; display:flex; flex-direction:column}
 .drawer.open{transform:none}
 .drawer-head{display:flex; justify-content:space-between; align-items:center; padding:14px; border-bottom:1px solid var(--line)}
 .drawer-nav{padding:10px 8px; display:grid; gap:6px}
-.drawer-item{
-  background:#102339; color:#e6f1ff; border:1px solid var(--line);
-  border-radius:12px; padding:12px 12px; text-align:left;
-}
+.drawer-item{background:#102339; color:#e6f1ff; border:1px solid var(--line); border-radius:12px; padding:12px 12px; text-align:left}
 .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:30}
 
-/* ===== Tabela (lista) ===== */
+/* ===== Tabela ===== */
 .table-wrapper{overflow:auto; border-radius:14px}
 .table{width:100%; border-collapse:collapse; border:1px solid var(--line)}
 .table th,.table td{padding:12px; border-bottom:1px solid var(--line)}
@@ -138,90 +114,43 @@ img{max-width:100%; height:auto; display:block}
 
 /* ===== Formulários ===== */
 .form label{display:grid; gap:6px; margin-bottom:12px}
-.form input,.form select,.form textarea{
-  background:#0b1f33; color:#e6f1ff; border:1px solid var(--line);
-  border-radius:12px; min-height:42px; padding:10px 12px; font-size:var(--fs-md)
-}
+.form input,.form select,.form textarea{background:#0b1f33; color:#e6f1ff; border:1px solid var(--line); border-radius:12px; min-height:42px; padding:10px 12px; font-size:var(--fs-md)}
 .form textarea{min-height:120px}
 menu{display:flex; gap:10px; justify-content:flex-end; padding:0; margin-top:8px}
 
 /* ===== FAB ===== */
-.fab{
-  position:fixed; right:16px; bottom:18px; z-index:25;
-  width:56px; height:56px; border-radius:999px;
-  background:linear-gradient(180deg,var(--brand-2),var(--brand));
-  color:#fff; font-size:28px; border:none; box-shadow:0 12px 28px rgba(11,116,184,.45)
-}
+.fab{position:fixed; right:16px; bottom:18px; z-index:25; width:56px; height:56px; border-radius:999px; background:linear-gradient(180deg,var(--brand-2),var(--brand)); color:#fff; font-size:28px; border:none; box-shadow:0 12px 28px rgba(11,116,184,.45)}
 
-/* ===== Tipografia auxiliar ===== */
+/* ===== Tipografia ===== */
 .muted{color:var(--muted)}
 .tiny{font-size:var(--fs-sm)}
 h1{font-size:var(--fs-3xl); line-height:var(--lh-tight); margin:0 0 8px}
 h2{font-size:var(--fs-2xl); line-height:var(--lh-tight); margin:16px 0 8px}
-h3{font-size:var(--fs-xl);  line-height:var(--lh-tight); margin:12px 0 6px}
+h3{font-size:var(--fs-xl); line-height:var(--lh-tight); margin:12px 0 6px}
 
-/* ==========================================================
-   CALENDÁRIO — 7 colunas, look de app
-   ========================================================== */
+/* ===== Calendário ===== */
 .calendar{padding:12px}
-.cal-header{
-  display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center;
-  margin-bottom:10px;
-}
+.cal-header{display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; margin-bottom:10px}
 .cal-title{font-size:var(--fs-xl); font-weight:700; text-align:center; color:#eaf3ff; letter-spacing:-.01em}
 .cal-header .btn{padding:8px 10px; min-width:0; min-height:0; border-radius:12px}
-
-#cal-grid{
-  display:grid !important;
-  grid-template-columns:repeat(7, minmax(0,1fr)) !important;
-  gap:8px !important;
-  width:100% !important;
-  padding:6px 2px 2px;
-}
+#cal-grid{display:grid !important; grid-template-columns:repeat(7, minmax(0,1fr)) !important; gap:8px !important; width:100% !important; padding:6px 2px 2px}
 #cal-grid .cal-cell{position:relative; display:block; width:100%}
-
-#cal-grid .cal-hit{
-  display:grid; place-items:center; box-sizing:border-box;
-  width:100% !important; min-width:0 !important; padding:0 !important;
-  font-size:1.05rem; font-weight:600; color:#d9e8ff;
-  border:none; border-radius:14px;
-  background:#0f2234;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-  min-height:44px; cursor:pointer;
-  transition:filter .12s ease, transform .05s ease;
-}
+#cal-grid .cal-hit{display:grid; place-items:center; box-sizing:border-box; width:100% !important; min-width:0 !important; padding:0 !important; font-size:1.05rem; font-weight:600; color:#d9e8ff; border:none; border-radius:14px; background:#0f2234; box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); min-height:44px; cursor:pointer; transition:filter .12s ease, transform .05s ease}
 #cal-grid .cal-hit:hover{filter:brightness(1.05)}
 #cal-grid .cal-hit:active{transform:translateY(1px)}
-
-@supports (aspect-ratio: 1 / 1){
-  #cal-grid .cal-hit{aspect-ratio:1/1; min-height:0}
-}
-
-#cal-grid .cal-today .cal-hit{
-  background:#12304a;
-  outline:2px solid rgba(11,116,184,.65); outline-offset:-2px;
-}
+@supports (aspect-ratio: 1 / 1){#cal-grid .cal-hit{aspect-ratio:1/1; min-height:0}}
+#cal-grid .cal-today .cal-hit{background:#12304a; outline:2px solid rgba(11,116,184,.65); outline-offset:-2px}
 #cal-grid .cal-out .cal-hit{opacity:.55}
-
-#cal-grid .cal-dot{
-  position:absolute; right:8px; bottom:8px;
-  width:9px; height:9px; border-radius:50%;
-  background:var(--ok); box-shadow:0 0 0 3px rgba(24,192,122,.14)
-}
-
+#cal-grid .cal-dot{position:absolute; right:8px; bottom:8px; width:9px; height:9px; border-radius:50%; background:var(--ok); box-shadow:0 0 0 3px rgba(24,192,122,.14)}
 .calendar .tiny{margin-top:8px; color:var(--ink-2)}
 
-/* ==========================================================
-   RESPONSIVO
-   ========================================================== */
+/* ===== Responsivo ===== */
 @media (max-width: 480px){
   html{font-size:112.5%}
   .container{padding:10px 10px 20px}
   #cal-grid{gap:6px !important}
   #cal-grid .cal-hit{font-size:.98rem; min-height:40px}
 }
-
-/* tablets/desktop pequenos */
 @media (min-width: 720px){
   .container{padding:18px 18px 28px}
   .metrics{grid-template-columns:repeat(3,1fr)}
@@ -231,3 +160,18 @@ h3{font-size:var(--fs-xl);  line-height:var(--lh-tight); margin:12px 0 6px}
 .hidden{display:none !important}
 .mt-8px{margin-top:8px}
 .table-unclipped .table-wrapper{overflow:visible; max-height:none}
+
+/* ==========================================================
+   PATCH OPÇÃO 1 — Zoom maior fixo
+   ========================================================== */
+:root{ --touch:52px } /* alvo mínimo maior */
+html{ font-size:118% !important }             /* ~19px base */
+@media (max-width:480px){ html{ font-size:125% !important } } /* ~20px */
+.topbar{ height:60px !important }
+.btn{ padding:14px 20px !important; min-height:var(--touch) !important }
+.form input,.form select,.form textarea{ min-height:48px !important; font-size:1.02rem }
+.metric .v{ font-size:clamp(26px,7vw,32px) !important }
+#cal-grid{ gap:10px !important }
+#cal-grid .cal-hit{ font-size:1.18rem !important; min-height:52px !important; background:#102a42 !important }
+#cal-grid .cal-today .cal-hit{ background:#163a59 !important; outline:2px solid rgba(11,116,184,.75) !important }
+.table th,.table td{ font-size:1.02rem !important; padding:14px !important }
