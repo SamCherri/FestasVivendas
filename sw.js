@@ -1,4 +1,4 @@
-const CACHE = "festas-v6"; // mude o sufixo sempre que alterar CSS/JS/HTML
+const CACHE = "festas-v8"; // mude o sufixo sempre que alterar CSS/JS/HTML
 const ASSETS = [
   "./",
   "./index.html",
