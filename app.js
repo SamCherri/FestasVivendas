@@ -28,7 +28,28 @@ document.title = APP_NAME;
 
 /* ========= Init ========= */
 function init() {
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  // Registro do Service Worker + fluxo de atualização
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").then(reg=>{
+      // Se há um SW em "waiting", oferece atualização
+      if (reg.waiting) askToRefresh(reg.waiting);
+
+      // Detecta novo SW instalado
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        if (sw) sw.addEventListener("statechange", () => {
+          if (sw.state === "installed" && navigator.serviceWorker.controller) askToRefresh(sw);
+        });
+      });
+
+      // Recarrega quando o novo SW assume
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return; refreshing = true; location.reload();
+      });
+    }).catch(()=>{});
+  }
+
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; });
 
   onAuthStateChanged(auth, (u) => {
@@ -41,7 +62,6 @@ function init() {
   fillHallSelects();
   bindEvents();
   renderCalendar();
-  startReminderLoop();
 }
 
 function ensureHelpers() {
@@ -77,8 +97,17 @@ function bindEvents() {
   $('[data-go="calendar"]')?.addEventListener("click", ()=>{ showView("calendar"); closeDrawer(); });
   $('[data-go="list"]')?.addEventListener("click", ()=>{ showView("list"); closeDrawer(); });
   $("#m-new")?.addEventListener("click", ()=>{ closeDrawer(); openPartyDialog(); });
-  $("#m-notify")?.addEventListener("click", ()=>{ closeDrawer(); requestNotify(); });
   $("#m-logout")?.addEventListener("click", async ()=>{ closeDrawer(); await signOut(auth); toast("Saiu."); });
+
+  // Acessibilidade do Drawer: ESC fecha e foca primeiro item ao abrir
+  document.addEventListener("keydown", (ev)=>{
+    if (ev.key === "Escape" && !$("#drawer").hidden) { closeDrawer(); }
+  });
+  const firstDrawerItem = () => $("#drawer .drawer-item, #btn-close-drawer");
+  const drawerObserver = new MutationObserver(()=>{
+    if (!$("#drawer").hidden) { firstDrawerItem()?.focus(); }
+  });
+  drawerObserver.observe($("#drawer"), { attributes:true, attributeFilter:["hidden"] });
 
   // Ações
   $("#fab-new")?.addEventListener("click", () => openPartyDialog());
@@ -122,8 +151,13 @@ function toggleAuthUI() {
 
 /* ========= Firestore ========= */
 async function loadParties() {
-  const snap = await getDocs(collection(db, "parties"));
-  state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  $("#tbody-parties")?.classList.add("loading");
+  try {
+    const snap = await getDocs(collection(db, "parties"));
+    state.parties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } finally {
+    $("#tbody-parties")?.classList.remove("loading");
+  }
 }
 async function createParty(data) { const ref = await addDoc(collection(db, "parties"), data); return ref.id; }
 async function updateParty(id, data) { await updateDoc(doc(db, "parties", id), data); }
@@ -145,7 +179,7 @@ function renderCalendar(){
   const grid = $("#cal-grid");
   const title = $("#cal-title");
   const base = new Date(state.monthBase.getFullYear(), state.monthBase.getMonth(), 1);
-  const monthName = base.toLocaleString("pt-BR",{month:"long"});
+  const monthName = base.toLocaleString("pt-BR",{month:"long", timeZone:"America/Sao_Paulo"});
   title.textContent = `${cap(monthName)} ${base.getFullYear()}`;
   grid.innerHTML = "";
 
@@ -168,7 +202,7 @@ function renderCalendar(){
     dayDiv.textContent = d.getDate();
     hit.appendChild(dayDiv);
 
-    // bolinha verde sem número
+    // bolinha verde quando existe festa
     const has = state.parties.some(p => p.date === dateStr);
     if (has) {
       const dot = document.createElement("span");
@@ -188,7 +222,7 @@ function renderCalendar(){
   }
 }
 
-/* ========= Tabela (vira “cards” no celular) ========= */
+/* ========= Tabela ========= */
 function renderTable(){
   const tbody = $("#tbody-parties");
   tbody.innerHTML = "";
@@ -280,8 +314,8 @@ function openPartyDialog(existing=null){
         </div>
       </fieldset>
       <div class="grid two">
-        <label>Apto <input type="text" name="apartment" required></label>
-        <label>Morador <input type="text" name="resident_name" required></label>
+        <label>Apto <input type="text" name="apartment" inputmode="numeric" autocomplete="on" required></label>
+        <label>Morador <input type="text" name="resident_name" autocomplete="name" required></label>
       </div>
       <label>Convidados
         <textarea name="guests_text" rows="5" placeholder="Nome 1; Nome 2; ..."></textarea>
@@ -351,7 +385,7 @@ function openFinalize(p){
       <label>Notas (opcional)
         <textarea name="occurrence_notes" rows="4" placeholder="Descreva a ocorrência">${p.occurrence_notes||""}</textarea>
       </label>
-      <fieldset><legend>Itens quebrados (opcional)</legend>
+        <fieldset><legend>Itens quebrados (opcional)</legend>
         <div class="grid five">
           <label>Copos <input type="number" name="broken_cups" min="0" value="${num(p.broken_cups)}"></label>
           <label>Garfos <input type="number" name="broken_forks" min="0" value="${num(p.broken_forks)}"></label>
@@ -425,33 +459,6 @@ async function openGuests(p){
   catch { err("Não foi possível atualizar convidados."); }
 }
 
-/* ========= Lembretes ========= */
-function requestNotify(){
-  if (!("Notification" in window)) return err("Seu navegador não suporta notificação.");
-  Notification.requestPermission().then((perm)=>{
-    if (perm==="granted") toast("Lembretes ativados."); else err("Permissão negada.");
-  });
-}
-function startReminderLoop(){ setInterval(checkReminders, 60*1000); checkReminders(); }
-function checkReminders(){
-  if (!("Notification" in window) || Notification.permission!=="granted") return;
-  const today = new Date();
-  state.parties.forEach(p=>{
-    if (!p.date) return;
-    const d = new Date(p.date+"T00:00:00");
-    const diffDays = Math.ceil((d - today)/(1000*60*60*24));
-    if (diffDays===3) maybeNotify(p,"Festa em 3 dias");
-    if (diffDays===1) maybeNotify(p,"Festa amanhã");
-  });
-}
-const notifiedOnce = new Set();
-function maybeNotify(p, title){
-  const key = title+"_"+p.id;
-  if (notifiedOnce.has(key)) return;
-  notifiedOnce.add(key);
-  new Notification(title, { body: `${p.date} • ${p.hall} • ${p.apartment} - ${p.resident_name}` });
-}
-
 /* ========= Util ========= */
 function fmtDate(d){ return d.toISOString().slice(0,10); }
 function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
@@ -460,4 +467,5 @@ function err(msg){ const e=$("#errbox"); e.textContent=msg; e.hidden=false; setT
 function esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
 function num(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
 
-init();
+function askToRefresh(worker){
+  if (confirm("Aplicativo atualizado. Deseja 
