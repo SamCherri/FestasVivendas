@@ -162,7 +162,7 @@ h3{font-size:var(--fs-xl); line-height:var(--lh-tight); margin:12px 0 6px}
 .table-unclipped .table-wrapper{overflow:visible; max-height:none}
 
 /* ==========================================================
-   PATCH OPÇÃO 1 — Zoom maior fixo
+   PATCH OPÇÃO 1 — Zoom maior fixo (celular)
    ========================================================== */
 :root{ --touch:52px } /* alvo mínimo maior */
 html{ font-size:118% !important }             /* ~19px base */
@@ -175,3 +175,34 @@ html{ font-size:118% !important }             /* ~19px base */
 #cal-grid .cal-hit{ font-size:1.18rem !important; min-height:52px !important; background:#102a42 !important }
 #cal-grid .cal-today .cal-hit{ background:#163a59 !important; outline:2px solid rgba(11,116,184,.75) !important }
 .table th,.table td{ font-size:1.02rem !important; padding:14px !important }
+
+/* ==========================================================
+   ACESSIBILIDADE — foco, skip-link, reduzir animações
+   ========================================================== */
+:focus-visible {
+  outline: 2px solid #58b0ff;
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.btn:focus-visible,
+.drawer-item:focus-visible,
+.cal-hit:focus-visible {
+  outline: 2px solid rgba(11,116,184,.8);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px; top: auto;
+  width: 1px; height: 1px; overflow: hidden;
+}
+.skip-link:focus {
+  left: 12px; top: 12px;
+  width: auto; height: auto;
+  padding: 8px 12px; background: #10263a; color: #fff;
+  border-radius: 10px; z-index: 9999;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
