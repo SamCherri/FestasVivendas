@@ -1,5 +1,5 @@
 // sw.js
-const CACHE = "festas-v12"; // ↑ suba a versão quando publicar mudanças
+const CACHE = "festas-v13"; // ↑ suba a versão quando publicar mudanças
 const ASSETS = [
   "./",
   "./index.html",
